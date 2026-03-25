@@ -1,0 +1,134 @@
+// ---New User Object ---
+{
+"firstName" : "Nathan",
+"lastName"  : "Fondimare",
+"userName"  : "usertest",
+"email"     : "mail@mail.com",    
+"status"    : "active",
+"password"  : "complexPassword"
+}
+
+
+// --- Short User Object ---
+{
+"firstName" : "Ari",
+"lastName"  : "Okmen",
+"userName"  : "usertest2",
+}
+
+
+// --- New Auth Object ---
+{
+    "role"  : "player",
+    "token" : "6GF68HVCQAR678J"
+}
+
+// --- New Games Object ---
+{
+    "status"    : " created",
+    "date"      : "2025-03-02",
+    "scoreHome" : 0,
+    "scoreAway" : 0,
+    "refere"    : "refUserRefere",
+    "awayTeam"  : "refname1",
+    "homeTeam"  : "refname2",
+    "field"     : "reffield"
+}
+
+// --- Short Games Object ---
+{
+    "date"     : "2025-03-02",
+    "awayTeam" : "refname1",
+    "homeTeam" : "refname2",
+    "field"    : "reffield"
+}
+
+// --- New Team Object ---
+{
+    "name"          : "teamName",
+    "description"   : "Description from team",(optionnel)
+    "sportType"     : "Football",
+    "trainer"       : "refUsertrainer",
+    "teamList"      : {"player1":"refplayer1","player2":"refplayer2"}
+
+}
+
+// --- New Field Object ---
+{
+    "name"     : "sportField",
+    "Location" : "gym1"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// --- New Patient Object ---
+{ "firstName": "Olivier",
+8
+"lastName": "Choquet",
+"niss": "640511-123-45",
+"birthDate": "1964-05-11",
+"address": {
+"street": "rue de la science",
+"number": 1,
+"zipcode": “5000”, country: “Belgium”
+}
+}
+// --- Patient Object ---
+{
+"id": 1,
+"firstName": "Olivier",
+"lastName": "Choquet",
+"niss": "640511-123-45",
+"birthDate": "1964-05-11",
+"address": {
+"street": "rue de la science",
+"number": 1,
+"zipcode": “5000”, country: “Belgium”
+}
+deletedAt: "2025-05-11",
+updatedDat: "2025-05-04",
+createdAt: "2025-04-26"
+}
+9
+// --- Doctor Object ---
+{
+"id": 101,
+"firstName": "Jane",
+"lastName": "Smith",
+"specialization": "Cardiology",
+"licenseNumber": "MED-99823",
+deletedAt: "2025-05-11",
+updatedDat: "2025-05-04",
+createdAt: "2025-04-26"
+}
+// --- Appointment Object ---
+{
+"id": 5001,
+"patientId": 1,
+"doctorId": 101,
+"dateTime": "2026-05-12T14:30:00",
+"reason": "Annual Checkup",
+"status": "Scheduled"
+}
