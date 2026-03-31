@@ -346,3 +346,202 @@ Requires `admin` role. Sets the user's status back to `active`, reversing a soft
 | `404` | User not found | No links |
 
 </details>
+
+## 🗂️ Schemas
+
+---
+
+<details open>
+<summary><strong>ErrorResponse</strong></summary>
+
+<br>
+
+Canonical JSON error shape.
+
+> **Note:** current implementation is mixed and may also return plain text or an empty body on some routes/statuses.
+
+| Field | Required | Type |
+|-------|----------|------|
+| `error` | ✅ | `string` |
+
+</details>
+
+---
+
+<details>
+<summary><strong>UserLoginDTO</strong></summary>
+
+<br>
+
+Credentials used to authenticate a user.
+
+| Field | Required | Type |
+|-------|----------|------|
+| `username` | ✅ | `string` |
+| `password` | ✅ | `string` |
+
+</details>
+
+---
+
+<details>
+<summary><strong>AuthenticatedUserDTO</strong></summary>
+
+<br>
+
+Successful login response containing the auth token and user role.
+
+| Field | Required | Type |
+|-------|----------|------|
+| `username` | ✅ | `string` |
+| `token` | ✅ | `string` |
+| `role` | ✅ | `ERole` |
+
+</details>
+
+---
+
+<details>
+<summary><strong>EUserStatus</strong> — <code>string</code></summary>
+
+<br>
+
+User account status:
+
+- `active` — account is active *(default)*
+- `inactive` — account has been soft-deleted
+
+**Enum values:** `active`, `inactive`
+
+</details>
+
+---
+
+<details>
+<summary><strong>ERole</strong> — <code>string</code></summary>
+
+<br>
+
+User role:
+
+- `admin` — full administrative access
+- `player` — default role for regular users
+- `referee` — assigned to officiate games
+- `trainer` — assigned to coach a team
+
+**Enum values:** `admin`, `player`, `referee`, `trainer`
+
+</details>
+
+---
+
+<details>
+<summary><strong>UserShortDTO</strong></summary>
+
+<br>
+
+Minimal user representation. Returned by `GET /users` and `GET /users/:id` for non-admin callers.
+
+| Field | Required | Type |
+|-------|----------|------|
+| `id` | ✅ | `integer` |
+| `firstName` | ✅ | `string` |
+| `lastName` | ✅ | `string` |
+
+</details>
+
+---
+
+<details>
+<summary><strong>UserFullDTO</strong></summary>
+
+<br>
+
+Full user profile with timestamps.
+
+> **Note:** Not currently used by any endpoint in the reverted code, but kept for documentation purposes.
+
+| Field | Required | Type |
+|-------|----------|------|
+| `id` | ✅ | `integer` |
+| `firstName` | ✅ | `string` |
+| `lastName` | ✅ | `string` |
+| `email` | ✅ | `string` |
+| `username` | ✅ | `string` |
+| `role` | ✅ | `ERole` |
+| `status` | ✅ | `EUserStatus` |
+| `createdAt` | ✅ | `string (date-time)` |
+| `updatedAt` | ✅ | `string (date-time)` |
+
+</details>
+
+---
+
+<details>
+<summary><strong>UserDTO</strong></summary>
+
+<br>
+
+Outbound user representation — **never contains a password in responses**.
+
+Returned by: `GET /users` *(admin callers)*, `POST /users`, `PUT /users/:id`, `GET /users/username/:username`, `GET /users/email/:email`, `PATCH /users/:id/role/:role`.
+
+| Field | Required | Type |
+|-------|----------|------|
+| `id` | ✅ | `integer` |
+| `firstName` | ✅ | `string` |
+| `lastName` | ✅ | `string` |
+| `email` | ✅ | `string` |
+| `username` | ✅ | `string` |
+| `password` | ❌ | `string` |
+| `role` | ✅ | `ERole` |
+| `status` | ✅ | `EUserStatus` |
+| `createdAt` | ❌ | `string (date-time)` |
+| `updatedAt` | ❌ | `string (date-time)` |
+
+</details>
+
+---
+
+<details>
+<summary><strong>NewUserDTO</strong></summary>
+
+<br>
+
+Payload for creating a user (`POST /users`). Role is always forced to `player`.
+
+| Field | Required | Type |
+|-------|----------|------|
+| `firstName` | ✅ | `string` |
+| `lastName` | ✅ | `string` |
+| `email` | ✅ | `string` |
+| `username` | ✅ | `string` |
+| `password` | ✅ | `string` |
+
+</details>
+
+---
+
+<details>
+<summary><strong>UserDBO</strong></summary>
+
+<br>
+
+Database object — shape stored in `data/users.json` *(snake_case)*.
+
+> **Note:** Used internally; never returned directly by the API.
+
+| Field | Required | Type |
+|-------|----------|------|
+| `id` | ✅ | `integer` |
+| `email` | ✅ | `string` |
+| `first_name` | ✅ | `string` |
+| `last_name` | ✅ | `string` |
+| `username` | ✅ | `string` |
+| `password` | ✅ | `string` |
+| `role` | ✅ | `ERole` |
+| `status` | ✅ | `EUserStatus` |
+| `created_at` | ❌ | `string (date-time)` |
+| `updated_at` | ❌ | `string (date-time)` |
+
+</details>

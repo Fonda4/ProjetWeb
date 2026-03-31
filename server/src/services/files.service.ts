@@ -2,6 +2,12 @@ import fs from "fs";
 import { LoggerService } from "./logger.service";
 
 export class FilesService {
+  static readUsers() {
+    throw new Error('Method not implemented.');
+  }
+  static writeUsers(users: any) {
+    throw new Error('Method not implemented.');
+  }
 
   private static doesFolderExist(folderPath: string) : boolean {
     return fs.existsSync(folderPath);
