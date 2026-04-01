@@ -1,7 +1,7 @@
 import { FieldDTO, NewFieldDTO } from "../models/field.model";
-import { EGameStatus, GameDTO, NewGameDTO } from "../models/game.model";
-import { ESportType, NewTeamDTO, TeamDTO } from "../models/team.model";
-import { ERole, EUserStatus, NewUserDTO, UserDTO, UserLoginDTO } from "../models/users.model";
+import { EGameStatus, GameDTO, NewGameDTO } from "../models/games.model";
+import { ESportType, NewTeamDTO, TeamDTO } from "../models/teams.model";
+import { ERole, EUserStatus, NewUserDTO, UserDTO, UserLoginDTO } from "../models/user.model";
 
 export function isNumber(obj: any): obj is number {
   return typeof obj === 'number' && !isNaN(obj) && isFinite(obj);

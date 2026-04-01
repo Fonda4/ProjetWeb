@@ -1,5 +1,5 @@
 
-import { UserDBO, UserDTO, UserShortDTO, EROLES, EUserStatus } from '../models/users.model';
+import { UserDBO, UserDTO, UserShortDTO, EROLES, EUserStatus,User } from '../models/users.model';
 
 export class UsersMapper {
   
@@ -13,8 +13,8 @@ export class UsersMapper {
       username: dbo.username,
       role: dbo.role,
       status: dbo.status,
-      createdAt: dbo.createdAt,
-      updatedAt: dbo.updatedAt
+      createdAt: dbo.created_at,
+      updatedAt: dbo.updated_at
     };
   }
 
@@ -40,8 +40,31 @@ export class UsersMapper {
       password: dto.password,        
       role: role,
       status: status,
-      createdAt: now,
-      updatedAt: now
+      created_at: now,
+      updated_at: now
     };
   }
+
+  static fromDBO(dbo: UserDBO): UserDTO {
+    return {
+      id: dbo.id,
+      firstName: dbo.first_name,     
+      lastName: dbo.last_name,
+      email: dbo.email,
+      username: dbo.username,
+      role: dbo.role,
+      status: dbo.status,
+      createdAt: dbo.created_at,
+      updatedAt: dbo.updated_at
+    };
+
+  static fromDBOtoShortDTO(dbo: UserDBO): UserShortDTO {
+    return {
+      id: dbo.id,
+      firstName: dbo.first_name,
+      lastName: dbo.last_name
+    };
 }
+
+}
+

@@ -15,6 +15,11 @@ export enum EUserStatus{
     
 }
 
+export interface User{
+id:number;
+}
+
+
 //description: Minimal user representation. Returned by GET /users and GET /users/:id for non-admin callers.
 export interface UserShortDTO{
 id : number;
@@ -53,6 +58,7 @@ export interface NewUserDTO {
 firstName : string;
 lastName :string    
 email : string ;
+role : EROLES;
 username : string;
 password : string;
 }

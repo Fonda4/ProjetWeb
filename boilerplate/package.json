@@ -1,0 +1,41 @@
+{
+  "name": "games_manager",
+  "version": "1.0.0",
+  "description": "A game management server",
+  "homepage": "https://github.com/JeromePlumat/games_mananger#readme",
+  "bugs": {
+    "url": "https://github.com/JeromePlumat/games_mananger/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JeromePlumat/games_mananger.git"
+  },
+  "license": "MIT",
+  "author": "Jerome Plumat",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "start": "node --watch dist/main.js",
+    "build": "tsc --watch -p .",
+    "dev": "tsx --env-file=env/dev.env --watch src/main.ts",
+    "test": "jest --watchAll",
+    "build-doc": "node validation/scripts/build-doc.js",
+    "demo:seed": "tsx scripts/seed.ts",
+    "demo:clear": "tsx scripts/clear.ts",
+    "demo:reset": "tsx scripts/reset.ts"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.0.3",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
