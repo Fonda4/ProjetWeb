@@ -1,18 +1,18 @@
-import { Request } from 'express'; 
-import { User, EROLES } from './users.model'; 
+// import { Request } from 'express'; 
+// import { User, EROLES } from './user.model'; 
 
-export interface AuthenticatedRequest extends Request {
-  user    ?: User; 
-}
+// export interface AuthenticatedRequest extends Request {
+//   user    ?: User; 
+// }
 
-//description:	Credentials used to authenticate a user
-export interface UserLoginDTO {
-  username : string;
-  password : string;
-}
+// //description:	Credentials used to authenticate a user
+// export interface UserLoginDTO {
+//   username : string;
+//   password : string;
+// }
 
-export interface authenticatedUserDTO {
-  username : string ;
-  token    : string;
-  role     : EROLES;
-}
+// export interface authenticatedUserDTO {
+//   username : string ;
+//   token    : string;
+//   role     : EROLES;
+// }

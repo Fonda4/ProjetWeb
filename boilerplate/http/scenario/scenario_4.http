@@ -1,0 +1,73 @@
+###
+# SCENARIO 4
+# 
+# An administrator creates, then modify a field.
+# They then retrieve the information of the modified field.
+#
+# REQUIRES the implementation of [POST auth/login]
+# REQUIRES the implementation of [POST fields/] and [PUT fields/:id]
+# REQUIRES the implementation of [GET fields/:id]
+# REQUIRES that users.json contain a user with the role admin.
+# ASSUMES that this administrator has the login "admin" and password "admin".
+#       This can be changed via the variables below if your data is different.
+# DOES NOT REQUIRE any data in fields.json
+# 
+# Example: data/users.json
+# [
+#     {
+#         "id": 1,
+#         "first_name": "Admin",
+#         "last_name": "Administrator",
+#         "email": "admin@vinci.be",
+#         "username": "admin",
+#         "password": "$2b$10$/.JGQ0/vX5yiX1dbSSZBRejb1OblqKo4Mx34mkKJb50GQusilXjJm",
+#         "role": "admin",
+#         "status": "active",
+#         "created_at": "2026-03-26T10:06:37.600Z",
+#         "updated_at": "2026-03-26T10:06:37.600Z"
+#     }
+# ]
+
+# Definition of variables used in the tests
+@server = http://localhost:3000
+@user = admin
+@password = admin
+
+### Login as administrator
+# @name admin_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+    "username": "{{user}}",
+    "password": "{{password}}"
+}
+
+### Creates a new field
+# MUST receive the FieldDTO of the created field
+# @name newfield
+POST {{server}}/fields HTTP/1.1
+Content-Type: application/json
+Authorization: {{admin_login.response.body.token}}
+
+{
+  "name": "TC Alma",
+  "location": "Brussels"
+}
+
+### Modifies the created field
+# MUST receive the FieldDTO of the modified field
+PUT {{server}}/fields/{{newfield.response.body.id}} HTTP/1.1
+Content-Type: application/json
+Authorization: {{admin_login.response.body.token}}
+
+{
+  "id": {{newfield.response.body.id}},
+  "name": "TC Alma",
+  "location": "Woluwe"
+}
+
+### Retrieve the information of the field
+# MUST receive a single FieldDTO
+GET {{server}}/fields/{{newfield.response.body.id}} HTTP/1.1
+Authorization: {{admin_login.response.body.token}}

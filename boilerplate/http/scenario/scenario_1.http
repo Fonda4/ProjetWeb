@@ -1,0 +1,37 @@
+###
+# SCENARIO 1
+# 
+# A visitor creates an account and logs in.
+#
+# REQUIRES the implementation of [POST auth/login] and [POST /users]
+# DOES NOT REQUIRE any data in database
+
+# Definition of variables used in the tests
+@server = http://localhost:3000
+@user = iamagoodplayer
+@firstname = Good
+@lastname = Player
+@password = superstrongpassword1234
+
+### Account creation
+# MUST receive a UserDTO with role "player" and status "active"
+POST {{server}}/users HTTP/1.1.
+Content-Type: application/json
+
+{
+  "email": "{{user}}@vinci.be",
+  "password": "{{password}}",
+  "firstName": "{{firstname}}",
+  "lastName": "{{lastname}}",
+  "username": "{{user}}"
+}
+
+### User Authentication
+# MUST receive a AuthenticatedUser
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+    "username": "{{user}}",
+    "password": "{{password}}"
+}

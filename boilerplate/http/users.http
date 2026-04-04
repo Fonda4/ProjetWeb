@@ -1,0 +1,368 @@
+###
+# Test requirements of user routes
+# Assumes that create_users.http has been run before.
+#
+
+@server = http://127.0.0.1:3000
+@adminuser = admin
+@adminpassword = admin
+@playeruser = player
+@playerpassword = player
+@refuser = ref
+@refpassword = ref
+@traineruser = trainer
+@trainerpassword = trainer
+
+###
+## Login as admin
+# @name admin_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "username": "{{adminuser}}",
+  "password": "{{adminpassword}}"
+}
+
+###
+## Login as player
+# @name player_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "username": "{{playeruser}}",
+  "password": "{{playerpassword}}"
+}
+
+###
+## Login as referee
+# @name ref_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "username": "{{refuser}}",
+  "password": "{{refpassword}}"
+}
+
+
+###
+# The system must allow any visitors to create an account.
+# By default, any new user is a player.
+POST {{server}}/users HTTP/1.1.
+Content-Type: application/json
+
+{
+  "email": "jane@example.com",
+  "password": "1234",
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "username": "jane"
+}
+
+###
+# The users email must contain at least one character . and one @
+# This query should fail.
+POST {{server}}/users HTTP/1.1.
+Content-Type: application/json
+
+{
+  "email": "janeexample.com",
+  "password": "superstrongpassword",
+  "firstName": "Jajanene",
+  "lastName": "Doe",
+  "username": "failingno@"
+}
+
+###
+# The users email must contain at least one character . and one @
+# This query should fail.
+POST {{server}}/users HTTP/1.1.
+Content-Type: application/json
+
+{
+  "email": "jane@examplecom",
+  "password": "superstrongpassword",
+  "firstName": "Jajanene",
+  "lastName": "Doe",
+  "username": "failingno."
+}
+
+###
+# Each user fills their email, username, password, etc...
+# incomplete DTO -> should fail
+POST {{server}}/users HTTP/1.1.
+Content-Type: application/json
+
+{
+  "email": "jane@examplecom",
+  "firstName": "Jajanene",
+  "username": "failingdto"
+}
+
+###
+# No duplicate usernames or emails
+POST {{server}}/users HTTP/1.1.
+Content-Type: application/json
+
+{
+  "email": "jane@other.com",
+  "password": "1234",
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "username": "jane"
+}
+###
+POST {{server}}/users HTTP/1.1.
+Content-Type: application/json
+
+{
+  "email": "jane@example.com",
+  "password": "1234",
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "username": "jane2"
+}
+
+###
+# Non-authenticated visitor cannot list users
+#
+GET {{server}}/users HTTP/1.1
+
+###
+# Admin can view the complete list of users
+#
+GET {{server}}/users HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+###
+# User can view the basic info of users
+#
+GET {{server}}/users HTTP/1.1
+Authorization: {{player_login.response.body.token}}
+
+###
+# Admin can view full info of user
+#
+GET {{server}}/users/2 HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+###
+# User can view basic info of other user
+#
+GET {{server}}/users/1 HTTP/1.1
+Authorization: {{player_login.response.body.token}}
+
+###
+# User can view full info of themselves
+#
+GET {{server}}/users/2 HTTP/1.1
+Authorization: {{player_login.response.body.token}}
+
+
+###
+# Non-authenticated cannot view anything
+#
+GET {{server}}/users/1 HTTP/1.1
+
+###
+# Non-authenticated cannot edit anything
+#
+PUT {{server}}/users/2 HTTP/1.1
+
+{
+  "id": 2,
+  "email": "modified@vinci.be",
+  "firstName": "Modified",
+  "lastName": "User",
+  "username": "newjane",
+  "role": "player",
+  "status": "active"
+}
+
+
+###
+# ids must match
+#
+PUT {{server}}/users/1 HTTP/1.1
+Authorization: {{player_login.response.body.token}}
+Content-Type: application/json
+
+{
+  "id": 2,
+  "email": "modified@vinci.be",
+  "firstName": "Modified",
+  "lastName": "User",
+  "username": "newjane",
+  "role": "player",
+  "status": "active"
+}
+
+
+###
+# user must exist
+#
+PUT {{server}}/users/10000 HTTP/1.1
+Authorization: {{player_login.response.body.token}}
+Content-Type: application/json
+
+{
+  "id": 10000,
+  "email": "modified@vinci.be",
+  "firstName": "Modified",
+  "lastName": "User",
+  "username": "newjane",
+  "role": "player",
+  "status": "active"
+}
+
+###
+# User cannot edit someone else
+#
+PUT {{server}}/users/1 HTTP/1.1
+Authorization: {{player_login.response.body.token}}
+Content-Type: application/json
+
+{
+  "id": 1,
+  "email": "modified@vinci.be",
+  "firstName": "Modified",
+  "lastName": "User",
+  "username": "newjane",
+  "role": "player",
+  "status": "active"
+}
+
+
+###
+# User can edit their info, but not their status or role!
+# role should remain player and status active
+#
+PUT {{server}}/users/2 HTTP/1.1
+Authorization: {{player_login.response.body.token}}
+Content-Type: application/json
+
+{
+  "id": 2,
+  "email": "modified@vinci.be",
+  "firstName": "Modified",
+  "lastName": "User",
+  "username": "newplayer",
+  "role": "admin",
+  "status": "inactive"
+}
+
+###
+# Admin can edit info
+#
+PUT {{server}}/users/2 HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+Content-Type: application/json
+
+{
+  "id": 2,
+  "email": "{{playeruser}}@vinci.be",
+  "firstName": "{{playeruser}}",
+  "lastName": "{{playeruser}}",
+  "username": "{{playeruser}}",
+  "role": "player",
+  "status": "inactive"
+}
+
+###
+# Non-admin cannot delete user
+#
+DELETE {{server}}/users/2 HTTP/1.1
+Authorization: {{player_login.response.body.token}}
+
+###
+# Non-authenticated cannot delete user
+#
+DELETE {{server}}/users/2 HTTP/1.1
+
+###
+# Admin can soft-delete user
+#
+DELETE {{server}}/users/5 HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+###
+# Admin cannot be soft-deleted
+#
+DELETE {{server}}/users/1 HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+###
+# Admins can search by username
+#
+GET {{server}}/users/username/admin HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+###
+# Refs can search by username
+#
+GET {{server}}/users/username/admin HTTP/1.1
+Authorization: {{ref_login.response.body.token}}
+
+###
+# Others can't search by username
+#
+GET {{server}}/users/username/admin HTTP/1.1
+Authorization: {{player_login.response.body.token}}
+
+###
+# Admins can search by email
+#
+GET {{server}}/users/email/admin@vinci.be HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+###
+# Refs can search by email
+#
+GET {{server}}/users/email/admin@vinci.be HTTP/1.1
+Authorization: {{ref_login.response.body.token}}
+
+###
+# Others can't search by username
+#
+GET {{server}}/users/email/admin@vinci.be  HTTP/1.1
+Authorization: {{player_login.response.body.token}}
+
+###
+# Admin cannot change role of non-player
+#
+PATCH {{server}}/users/3/role/admin HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+###
+# User cannot change user role
+#
+PATCH {{server}}/users/2/role/trainer HTTP/1.1
+Authorization: {{player_login.response.body.token}}
+
+
+###
+# Role must exist!
+#
+PATCH {{server}}/users/2/role/whatever HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+
+###
+# Admin can reactivate user
+#
+PATCH {{server}}/users/5/reactivate HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+###
+# User cannot reactivate user
+#
+PATCH {{server}}/users/2/reactivate HTTP/1.1
+Authorization: {{ref_login.response.body.token}}
+
+###
+# Admin cannot reactivate non-existing user
+#
+PATCH {{server}}/users/10000/reactivate HTTP/1.1
+Authorization: {{admin_login.response.body.token}}

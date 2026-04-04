@@ -1,0 +1,92 @@
+###
+# Create necessary users to test all routes
+# users.json should already have an admin:
+# [
+    # {
+    #     "id": 1,
+    #     "first_name": "Admin",
+    #     "last_name": "Administrator",
+    #     "email": "admin@vinci.be",
+    #     "username": "admin",
+    #     "password": "$2b$10$/.JGQ0/vX5yiX1dbSSZBRejb1OblqKo4Mx34mkKJb50GQusilXjJm",
+    #     "role": "admin",
+    #     "status": "active",
+    #     "created_at": "2026-03-26T10:06:37.600Z",
+    #     "updated_at": "2026-03-26T10:06:37.600Z"
+    # }
+# ]
+@server = http://127.0.0.1:3000
+
+@adminuser = admin
+@adminpassword = admin
+@playeruser = player
+@playerpassword = player
+@refuser = ref
+@refpassword = ref
+@traineruser = trainer
+@trainerpassword = trainer
+
+### 
+# Create users
+#
+POST {{server}}/users HTTP/1.1.
+Content-Type: application/json
+
+{
+  "email": "{{playeruser}}@vinci.be",
+  "password": "{{playerpassword}}",
+  "firstName": "{{playeruser}}",
+  "lastName": "{{playeruser}}",
+  "username": "{{playeruser}}"
+}
+###
+POST {{server}}/users HTTP/1.1.
+Content-Type: application/json
+
+{
+  "email": "{{refuser}}@vinci.be",
+  "password": "{{refpassword}}",
+  "firstName": "{{refuser}}",
+  "lastName": "{{refuser}}",
+  "username": "{{refuser}}"
+}
+###
+POST {{server}}/users HTTP/1.1.
+Content-Type: application/json
+
+{
+  "email": "{{traineruser}}@vinci.be",
+  "password": "{{trainerpassword}}",
+  "firstName": "{{traineruser}}",
+  "lastName": "{{traineruser}}",
+  "username": "{{traineruser}}"
+}
+
+###
+# Update their role
+# Requires admin login
+###
+## Login as admin
+# @name admin_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "username": "{{adminuser}}",
+  "password": "{{adminpassword}}"
+}
+
+###
+# Change ref role
+PATCH {{server}}/users/3/role/referee HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+###
+# Change trainer role
+PATCH {{server}}/users/4/role/trainer HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+###
+# List all users to check
+GET {{server}}/users
+Authorization: {{admin_login.response.body.token}}

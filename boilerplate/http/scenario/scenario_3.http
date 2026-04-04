@@ -1,0 +1,58 @@
+###
+# SCENARIO 3
+# 
+# A visitor retrieves the list of fields and of teams.
+# They then retrieve the information of a specific team and field.
+#
+# REQUIRES the implementation of [GET teams/] and [GET teams/:id]
+# REQUIRES the implementation of [GET fields/] and [GET fields/:id]
+# REQUIRES that teams.json and fields.json are filled with some test data.
+# DOES NOT REQUIRE any data in users.json
+# 
+# Example: data/fields.json
+# [
+#     {
+#         "id": 1,
+#         "name": "Paul Lambin Stadium",
+#         "location": "Woluwe-Saint-Pierre",
+#         "created_at": "2026-03-26T23:10:05.072Z",
+#         "updated_at": "2026-03-26T23:10:05.072Z"
+#     }
+# ]
+#
+# Example: data/teams.json
+# [
+#     {
+#         "id": 1,
+#         "name": "Keyboard Warriors",
+#         "description": "The Vinci informatics handball team",
+#         "sport_type": "handball",
+#         "players": [
+#             2, 10, 24
+#         ],
+#         "trainer_id": 3,
+#         "created_at": "2026-03-26T23:10:17.230Z",
+#         "updated_at": "2026-03-26T23:12:44.064Z"
+#     }
+# ]
+
+# Definition of variables used in the tests
+@server = http://localhost:3000
+
+### Retrieve list of fields
+# MUST receive a list of FieldDTO
+# @name fields
+GET {{server}}/fields HTTP/1.1
+
+### Retrieve a field by ID
+# MUST receive a single FieldDTO
+GET {{server}}/fields/{{fields.response.body.0.id}} HTTP/1.1
+
+### Retrieve the list of teams
+# MUST receive a list of TeamDTO
+# @name teams
+GET {{server}}/teams HTTP/1.1
+
+### Retrieve a team by ID
+# MUST receive a single TeamDTO
+GET {{server}}/teams/{{teams.response.body.0.id}} HTTP/1.1

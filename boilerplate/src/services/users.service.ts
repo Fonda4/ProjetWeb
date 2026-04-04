@@ -1,85 +1,119 @@
-
-import { UserDBO, NewUserDTO, EROLES, EUserStatus, User } from '../models/users.model';
-import { FilesService } from './files.service'; 
-import { LoggerService } from './logger.service';
-import { UsersMapper } from '../mappers/users.mapper';
-import bcrypt from 'bcrypt'; 
+import { UsersMapper } from "../mappers/users.mapper";
+import { NewUserDTO, UserDTO, UserDBO, EROLES, EUserStatus } from "../models/user.model";
+import { FilesService } from "./files.service";
+import { LoggerService } from "./logger.service";
+import bcrypt from "bcrypt";
 
 export class UsersService {
-
   protected static dbPath = './data/users.json';
 
-  private static readUsersDB() : User[] {
-    let dbos: UserDBO[] = [];
+  // 1. LECTURE : On garde les DBO en interne pour conserver toutes les données (y compris les mots de passe)
+  private static readUsersDB(): UserDBO[] {
     try {
-      dbos = FilesService.readFile<UserDBO>(this.dbPath);
+      return FilesService.readFile<UserDBO>(this.dbPath);
     } catch (error) {
       LoggerService.error(error);
-      return [];
+      throw new Error('Internal Error'); // Règle du cours : on lève une erreur interne
     }
-    const items: User[] = [];
-    for(const dbo of dbos) {
-      items.push(UsersMapper.fromDBO(dbo));
-    }
-    return items;
-  } 
- 
-  static getAll(): UserDBO[] {
-    const users = this.readUsersDB();
-    return users.filter(user => users.status === 'active');
   }
 
-    static getByUsername(username: string): User | undefined {
-    const usersDB: User[] = this.readUsersDB();
-    for(const user of usersDB) {
-      if(user.username === username) {
-        return user;
+  // 2. ECRITURE
+  private static writeUsersDB(dbos: UserDBO[]): void {
+    try {
+      FilesService.writeFile<UserDBO>(this.dbPath, dbos);
+    } catch (error) {
+      LoggerService.error(error);
+      throw new Error('Internal Error');
+    }
+  }
+
+  // 3. ALGORITHME D'ID : Emprunté à ton fichier, très clair !
+  protected static getNewID(dbos: UserDBO[]): number {
+    let maxId = 0;
+    if (dbos.length === 0) {
+      return 1;
+    }
+    for (const dbo of dbos) {
+      if (dbo.id > maxId) {
+        maxId = dbo.id;
+      }
+    }
+    return maxId + 1;
+  }
+
+  // 4. GET ALL : Utilisation d'une boucle for classique
+  static getAll(): UserDTO[] {
+    const dbos = this.readUsersDB();
+    const activeUsers: UserDTO[] = [];
+    
+    for (const dbo of dbos) {
+      if (dbo.status === EUserStatus.ACTIVE) {
+        // C'est ici qu'on transforme le DBO en DTO pour le contrôleur
+        activeUsers.push(UsersMapper.toDTO(dbo));
+      }
+    }
+    return activeUsers;
+  }
+
+  // 5. GET BY USERNAME : Recherche par boucle
+  static getByUsername(username: string): UserDTO | undefined {
+    const dbos = this.readUsersDB();
+    
+    for(const dbo of dbos) {
+      if(dbo.username === username && dbo.status === EUserStatus.ACTIVE) {
+        return UsersMapper.toDTO(dbo);
       }
     }
     return undefined;
   }
 
- 
-  static async create(newUser: NewUserDTO): Promise<UserDBO> {
-    const users = FilesService.readUsersDB();
+  // 6. CREATE : Synchrone grâce à ton exemple
+  static create(newUser: NewUserDTO): UserDTO {
+    const dbos = this.readUsersDB();
     
-    const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
+    const newId = this.getNewID(dbos);
+    // On utilise hashSync comme dans ton exemple
+    const passwordHash = bcrypt.hashSync(newUser.password, 10);
     
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(newUser.password!, saltRounds);
-
-    const now = new Date(); 
-    const UserDbo: UserDBO = {
-        id: newId,
-        first_name: newUser.firstName,
-        last_name: newUser.lastName,
-        email: newUser.email,
-        username: newUser.username,
-        password: hashedPassword,
-        role: newUser.role,
-        createdAt: now,
-        updatedAt: now,
-        status: EUserStatus.ACTIVE
-    };
-
-    users.push(UserDbo);
-    FilesService.writeUsers(users); // On sauvegarde
-    return UserDbo;
+    newUser.password = passwordHash;
+    // On utilise notre Mapper pour générer le DBO proprement
+    const newDbo = UsersMapper.toDBO(newUser, newId, EROLES.PLAYER, EUserStatus.ACTIVE);
+    
+    dbos.push(newDbo);
+    this.writeUsersDB(dbos);
+    
+    return UsersMapper.toDTO(newDbo);
   }
 
- 
+  // 7. SOFT DELETE : Algorithme de recherche d'index de ton exemple
   static softDelete(id: number): boolean {
-    const users = FilesService.readUsersDB();
-    const userIndex = users.findIndex(u => u.id === id);
-
-    if (userIndex === -1) return false;
+    const dbos = this.readUsersDB();
+    let index = -1;
     
-    if (Users[UserIndex].role === 'admin') return false;
+    // Algorithme de recherche de position
+    for(let i = 0; i < dbos.length; i++) {
+      if(dbos[i].id === id) {
+        index = i;
+        break;
+      }
+    }
+    
+    if (index === -1 || dbos[index].status === EUserStatus.INACTIVE) {
+      return false;
+    }
+    if (dbos[index].role === EROLES.ADMIN) {
+      return false; // On ne supprime pas un admin
+    }
 
-    users[userIndex].status = 'inactive';
-    users[userIndex].updated_at = new Date();
+    dbos[index].status = EUserStatus.INACTIVE;
+    dbos[index].updated_at = new Date();
 
-    FilesService.writeUsers(users);
+    this.writeUsersDB(dbos);
     return true;
+  }
+
+  // 8. VALIDATION : Ajouté depuis ton fichier, très utile pour la suite !
+  static validateUser(password: string, passwordHash: string): boolean {
+    return bcrypt.compareSync(password, passwordHash);
   }
 }
