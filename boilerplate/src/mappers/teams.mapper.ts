@@ -3,7 +3,7 @@ import { TeamDBO, TeamDTO, TeamShortDTO, NewTeamDTO } from '../models/teams.mode
 export class TeamsMapper {
   
   /**
-   * DBO -> DTO : De la base de données vers le format standard pour le client
+   * DBO -> DTO : From the database format to the format we want to send to the client
    */
   static toDTO(dbo: TeamDBO): TeamDTO {
     return {
@@ -19,7 +19,7 @@ export class TeamsMapper {
   }
 
   /**
-   * DBO -> ShortDTO : De la base de données vers le format résumé
+   * DBO -> ShortDTO : From the database format to the reduced format we want to send to the client (for lists)
    */
   static toShortDTO(dbo: TeamDBO): TeamShortDTO {
     return {
@@ -30,8 +30,8 @@ export class TeamsMapper {
   }
 
   /**
-   * NewDTO -> DBO : Du client vers la base de données (lors d'une création)
-   * Le serveur décide de l'ID, de la date, de l'entraîneur et initialise les joueurs.
+   * NewDTO -> DBO : From the client to the database format (when creating a new team)
+   * The server decides the ID, date, and initializes the players.
    */
   static toDBO(dto: NewTeamDTO, newId: number, trainerId: number): TeamDBO {
     const now = new Date();
@@ -39,16 +39,14 @@ export class TeamsMapper {
     return {
       id: newId,
       name: dto.name,
-      description: dto.description || "", // Si pas de description, on met une chaîne vide
+      description: dto.description || "", // If description is not provided, we initialize it with an empty string
       sport_type: dto.sportType,
-      players: [],                        // Règle du Swagger : liste de joueurs vide au départ
+      players: [],                        // Rule : when creating a team, we initialize with un tableau vide
       trainer_id: trainerId,
       created_at: now,
       updated_at: now
     };
   }
 
-  // Note : Il n'y a pas de "toFullDTO" ici, car pour créer un TeamFullDTO, 
-  // le Service devra aller chercher les informations dans le fichier des utilisateurs. 
-  // Le Mapper ne gère pas la logique d'aller lire d'autres fichiers !
+  
 }

@@ -3,13 +3,15 @@ import { TeamsService } from '../services/teams.service';
 import { AuthService } from '../services/auth.service'; // Ton middleware d'authentification
 import { EROLES } from '../models/user.model';
 import { isNumber, isNewTeamDTO, isTeamDTO } from '../utils/guards';
+import { AuthenticatedRequest } from '../models/auth.model';
+import { LoggerService } from '../services/logger.service';
 
 export const teamsController = Router();
 
 /**
  * GET /teams
- * Liste de toutes les équipes (Version résumée)
- * Auth: NON REQUISE
+ * List of all teams (Summary version)
+ * Auth: Not required
  */
 teamsController.get('/', (req: Request, res: Response) => {
   try {
@@ -22,16 +24,18 @@ teamsController.get('/', (req: Request, res: Response) => {
 
 /**
  * GET /teams/own
- * Liste des équipes auxquelles l'utilisateur connecté appartient (Version complète)
- * Auth: REQUISE (N'importe quel rôle)
- * * ⚠️ ATTENTION PÉDAGOGIQUE : Cette route DOIT être placée AVANT `GET /teams/:id`.
- * Sinon, Express va croire que "own" est un paramètre `:id` !
+ * List of teams to which the connected user belongs (Complete version)
+ * Auth: REQUIRED (Any role)
  */
-teamsController.get('/own', AuthService.authorize, (req: Request, res: Response) => {
+teamsController.get('/own', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
   try {
-    const loggedInUser = (req as any).user; // Récupéré grâce au middleware
+    const loggedInUser = req.user; 
     
-    // On passe l'ID de l'utilisateur connecté à notre service
+  if (!loggedInUser) {
+      return res.status(401).send("Unauthenticated user");
+  }
+
+// We pass the ID of the user logged into our service
     const ownTeams = TeamsService.getOwnTeams(loggedInUser.id);
     
     res.status(200).json(ownTeams);
@@ -42,8 +46,8 @@ teamsController.get('/own', AuthService.authorize, (req: Request, res: Response)
 
 /**
  * GET /teams/:id
- * Récupère une équipe spécifique (Version standard)
- * Auth: NON REQUISE
+ * Retrieve a specific team (Standard version)
+ * Auth: Not required
  */
 teamsController.get('/:id', (req: Request, res: Response) => {
   try {
@@ -63,25 +67,30 @@ teamsController.get('/:id', (req: Request, res: Response) => {
 
 /**
  * POST /teams
- * Créer une nouvelle équipe
- * Auth: REQUISE (Rôle 'trainer' uniquement)
+ * Create a new team
+ * Auth: REQUIRED (Role 'trainer' only)
  */
-teamsController.post('/', AuthService.authorize, (req: Request, res: Response) => {
+teamsController.post('/', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
   try {
-    const loggedInUser = (req as any).user;
+    const loggedInUser = req.user;
+
+    if (!loggedInUser) {
+      return res.status(401).send("Unauthenticated user");
+    }
+
     const teamData = req.body;
 
-    // 1. Vérification du rôle (Seul un trainer peut créer une équipe)
+    // 1. Check role (Only a trainer can create a team)
     if (loggedInUser.role !== EROLES.TRAINER) {
       return res.status(403).send('Forbidden: Only trainers can create teams');
     }
 
-    // 2. Validation des données entrantes
+    // 2. Validate incoming data
     if (!isNewTeamDTO(teamData)) {
       return res.status(400).send('Bad Request: Invalid team data');
     }
 
-    // 3. Appel au service (On passe l'ID du trainer automatiquement)
+    // 3. Call service (We pass the trainer ID automatically)
     const newTeam = TeamsService.create(teamData, loggedInUser.id);
 
     res.status(201).json(newTeam);
@@ -92,12 +101,17 @@ teamsController.post('/', AuthService.authorize, (req: Request, res: Response) =
 
 /**
  * PUT /teams/:id
- * Mettre à jour une équipe
- * Auth: REQUISE (Rôle 'trainer' uniquement)
+ * Update a team
+ * Auth: REQUIRED (Role 'trainer' only)
  */
-teamsController.put('/:id', AuthService.authorize, (req: Request, res: Response) => {
+teamsController.put('/:id', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
   try {
-    const loggedInUser = (req as any).user;
+    const loggedInUser = req.user;
+
+    if (!loggedInUser) {
+      return res.status(401).send("Unauthenticated user");
+    } 
+    
     const id = Number(req.params.id);
     const teamData = req.body;
 
@@ -108,7 +122,7 @@ teamsController.put('/:id', AuthService.authorize, (req: Request, res: Response)
     if (!isNumber(id)) return res.status(400).send('Bad Request: Invalid ID');
     if (!isTeamDTO(teamData)) return res.status(400).send('Bad Request: Invalid body data');
     
-    // L'ID de l'URL doit correspondre à l'ID du Body selon le Swagger
+// The URL ID must match the Body ID according to the Swagger
     if (id !== teamData.id) {
       return res.status(400).send('Bad Request: Path ID and Body ID mismatch');
     }
@@ -127,17 +141,22 @@ teamsController.put('/:id', AuthService.authorize, (req: Request, res: Response)
 
 /**
  * PATCH /teams/:id/join
- * Rejoindre une équipe
- * Auth: REQUISE (N'importe quel rôle)
+ * Join a team
+ * Auth: REQUIRED (Any role)
  */
-teamsController.patch('/:id/join', AuthService.authorize, (req: Request, res: Response) => {
+teamsController.patch('/:id/join', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
   try {
-    const loggedInUser = (req as any).user;
+    const loggedInUser = req.user;
+
+    if (!loggedInUser) {
+      return res.status(401).send("Unauthenticated user");
+    }
+
     const id = Number(req.params.id);
 
     if (!isNumber(id)) return res.status(400).send('Bad Request: Invalid ID');
 
-    // On n'a pas besoin du body, on utilise l'ID de l'utilisateur connecté
+// We pass the ID of the user logged into our service and the ID of the team to join
     const updatedTeam = TeamsService.joinTeam(id, loggedInUser.id);
 
     if (updatedTeam === undefined) return res.status(404).send('Not Found: Team does not exist');
@@ -151,19 +170,24 @@ teamsController.patch('/:id/join', AuthService.authorize, (req: Request, res: Re
 
 /**
  * PATCH /teams/:id/leave
- * Quitter une équipe
- * Auth: REQUISE (N'importe quel rôle)
+ * Leave a team
+ * Auth: REQUIRED (Any role)
  */
-teamsController.patch('/:id/leave', AuthService.authorize, (req: Request, res: Response) => {
+teamsController.patch('/:id/leave', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
   try {
-    const loggedInUser = (req as any).user;
+    const loggedInUser = req.user;
+
+    if (!loggedInUser) {
+      return res.status(401).send("Unauthenticated user");
+    }
+
     const id = Number(req.params.id);
 
     if (!isNumber(id)) return res.status(400).send('Bad Request: Invalid ID');
 
     const updatedTeam = TeamsService.leaveTeam(id, loggedInUser.id);
 
-    // Le swagger indique un code 404 si l'équipe n'existe pas OU si le joueur n'y est pas
+    // The swagger indicates a 404 code if the team does not exist OR if the player is not in it
     if (updatedTeam === undefined || updatedTeam === null) {
       return res.status(404).send('Not Found: Team does not exist or user not in team');
     }

@@ -3,12 +3,12 @@ import { UserDBO, UserDTO, UserShortDTO, EROLES, EUserStatus, NewUserDTO } from 
 export class UsersMapper {
   
   /**
-   * Transforme les données de la DB (DBO) vers le format Client (DTO)
+   * Tansforms the data from the DB (DBO) to the format we want to send to the client (DTO)
    */
   static toDTO(dbo: UserDBO): UserDTO {
     return {
       id: dbo.id,
-      firstName: dbo.first_name,     // Conversion snake_case -> camelCase
+      firstName: dbo.first_name,     // transformation snake_case -> camelCase
       lastName: dbo.last_name,       
       email: dbo.email,
       username: dbo.username,
@@ -20,7 +20,7 @@ export class UsersMapper {
   }
 
   /**
-   * Transforme les données de la DB (DBO) vers le format Client réduit (ShortDTO)
+   * Tansforms the data from the DB (DBO) to the reduced client format (ShortDTO)
    */
   static toShortDTO(dbo: UserDBO): UserShortDTO {
     return {
@@ -31,19 +31,19 @@ export class UsersMapper {
   }
 
   /**
-   * Transforme les données entrantes du client (NewUserDTO) en format DB (DBO)
-   * Le serveur décide seul des dates de création et d'id.
+   * Tansforms the data from the client (NewUserDTO) to the database format (DBO)
+   * The server decides the creation date and ID.
    */
   static toDBO(dto: NewUserDTO, newId: number, role: EROLES, status: EUserStatus): UserDBO {
-    const now = new Date(); // La date de création et de modification sont identiques à la création
+    const now = new Date(); 
     
     return {
       id: newId,
-      first_name: dto.firstName,     // Conversion camelCase -> snake_case
+      first_name: dto.firstName,     
       last_name: dto.lastName,       
       email: dto.email,
       username: dto.username,
-      password: dto.password,        // Le mot de passe est stocké (idéalement hashé plus tard)
+      password: dto.password,        
       role: role,
       status: status,
       created_at: now,
