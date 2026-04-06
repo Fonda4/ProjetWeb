@@ -8,17 +8,17 @@ import bcrypt from "bcrypt";
 export class UsersService {
   protected static dbPath = './data/users.json';
 
-  // 1. LECTURE : On garde les DBO en interne pour conserver toutes les données (y compris les mots de passe)
+  // READING: We keep the DBOs internally to retain all data (including passwords)
   private static readUsersDB(): UserDBO[] {
     try {
       return FilesService.readFile<UserDBO>(this.dbPath);
     } catch (error) {
       LoggerService.error(error);
-      throw new Error('Internal Error'); // Règle du cours : on lève une erreur interne
+      throw new Error('Internal Error'); 
     }
   }
 
-  // 2. ECRITURE
+  // Writing
   private static writeUsersDB(dbos: UserDBO[]): void {
     try {
       FilesService.writeFile<UserDBO>(this.dbPath, dbos);
@@ -28,7 +28,7 @@ export class UsersService {
     }
   }
 
-  // 3. ALGORITHME D'ID : Emprunté à ton fichier, très clair !
+  // Scan by id
   protected static getNewID(dbos: UserDBO[]): number {
     let maxId = 0;
     if (dbos.length === 0) {
@@ -42,21 +42,21 @@ export class UsersService {
     return maxId + 1;
   }
 
-  // 4. GET ALL : Utilisation d'une boucle for classique
+  //  GET ALL 
   static getAll(): UserDTO[] {
     const dbos = this.readUsersDB();
     const activeUsers: UserDTO[] = [];
     
     for (const dbo of dbos) {
       if (dbo.status === EUserStatus.ACTIVE) {
-        // C'est ici qu'on transforme le DBO en DTO pour le contrôleur
+        
         activeUsers.push(UsersMapper.toDTO(dbo));
       }
     }
     return activeUsers;
   }
 
-  // 5. GET BY USERNAME : Recherche par boucle
+  //  GET BY USERNAME 
   static getByUsername(username: string): UserDTO | undefined {
     const dbos = this.readUsersDB();
     
@@ -68,16 +68,16 @@ export class UsersService {
     return undefined;
   }
 
-  // 6. CREATE : Synchrone grâce à ton exemple
+  // CREATE 
   static create(newUser: NewUserDTO): UserDTO {
     const dbos = this.readUsersDB();
     
     const newId = this.getNewID(dbos);
-    // On utilise hashSync comme dans ton exemple
+  
     const passwordHash = bcrypt.hashSync(newUser.password, 10);
     
     newUser.password = passwordHash;
-    // On utilise notre Mapper pour générer le DBO proprement
+    // We use our Mapper to generate the DBO correctly
     const newDbo = UsersMapper.toDBO(newUser, newId, EROLES.PLAYER, EUserStatus.ACTIVE);
     
     dbos.push(newDbo);
@@ -86,12 +86,12 @@ export class UsersService {
     return UsersMapper.toDTO(newDbo);
   }
 
-  // 7. SOFT DELETE : Algorithme de recherche d'index de ton exemple
+  //  SOFT DELETE 
   static softDelete(id: number): boolean {
     const dbos = this.readUsersDB();
     let index = -1;
     
-    // Algorithme de recherche de position
+   
     for(let i = 0; i < dbos.length; i++) {
       if(dbos[i].id === id) {
         index = i;
@@ -103,7 +103,7 @@ export class UsersService {
       return false;
     }
     if (dbos[index].role === EROLES.ADMIN) {
-      return false; // On ne supprime pas un admin
+      return false; 
     }
 
     dbos[index].status = EUserStatus.INACTIVE;
@@ -113,11 +113,11 @@ export class UsersService {
     return true;
   }
 
-  // 8. VALIDATION : Ajouté depuis ton fichier, très utile pour la suite !
+  //  VALIDATION 
   static validateUser(password: string, passwordHash: string): boolean {
     return bcrypt.compareSync(password, passwordHash);
   }
-  // 9. LECTURE : Obtenir le DBO complet par ID (utile pour le contrôleur)
+  // Readding
   static getById(id: number): UserDBO | undefined {
     const dbos = this.readUsersDB();
     for (const dbo of dbos) {
@@ -125,10 +125,10 @@ export class UsersService {
         return dbo;
       }
     }
-    return undefined; // Non trouvé
+    return undefined; 
   }
 
-  // 10. LECTURE : Obtenir par email
+  // Reading
   static getByEmail(email: string): UserDTO | undefined {
     const dbos = this.readUsersDB();
     for (const dbo of dbos) {
@@ -139,12 +139,14 @@ export class UsersService {
     return undefined;
   }
 
-  // 11. MISE À JOUR : Mettre à jour un utilisateur (PUT)
+/**
+   * Update
+   */
   static update(id: number, updatedData: UserDTO): UserDTO | undefined {
     const dbos = this.readUsersDB();
     let index = -1;
     
-    // Recherche de l'utilisateur
+ 
     for (let i = 0; i < dbos.length; i++) {
       if (dbos[i].id === id && dbos[i].status === EUserStatus.ACTIVE) {
         index = i;
@@ -154,19 +156,22 @@ export class UsersService {
     
     if (index === -1) return undefined;
 
-    // Selon le swagger, on ne met à jour que firstName, lastName, email et username
+    // Swagger business rule: ONLY these 4 fields are updated
     dbos[index].first_name = updatedData.firstName;
     dbos[index].last_name = updatedData.lastName;
     dbos[index].email = updatedData.email;
     dbos[index].username = updatedData.username;
-    // On met à jour la date de modification
+    
+   
     dbos[index].updated_at = new Date();
 
+    // Save
     this.writeUsersDB(dbos);
+    
     return UsersMapper.toDTO(dbos[index]);
   }
 
-  // 12. MISE À JOUR : Changer le rôle (PATCH)
+  // Update : Role
   static changeRole(id: number, newRole: EROLES): UserDTO | null | undefined {
     const dbos = this.readUsersDB();
     let index = -1;
@@ -180,7 +185,7 @@ export class UsersService {
     
     if (index === -1) return undefined; // 404 Not Found
     
-    // Règle métier du swagger : on ne peut promouvoir qu'un "player"
+    // Swagger business rule: Only one “player” can be promoted
     if (dbos[index].role !== EROLES.PLAYER) {
       return null; // 400 Bad Request
     }
@@ -192,7 +197,7 @@ export class UsersService {
     return UsersMapper.toDTO(dbos[index]);
   }
 
-  // 13. MISE À JOUR : Réactiver un utilisateur (PATCH)
+  // Update
   static reactivate(id: number): boolean {
     const dbos = this.readUsersDB();
     let index = -1;
@@ -216,24 +221,23 @@ export class UsersService {
 
 
   /**
-   * Vérifie les identifiants d'un utilisateur.
-   * Retourne le UserDTO si le mot de passe est bon, sinon undefined.
+   * Verifies a user's credentials.
+   * Returns the UserDTO if the password is correct; otherwise, returns undefined.
    */
   static checkCredentials(loginData: UserLoginDTO): UserDTO | undefined {
     const dbos = this.readUsersDB();
     
     for (const dbo of dbos) {
       if (dbo.username === loginData.username && dbo.status === EUserStatus.ACTIVE) {
-        // On utilise la méthode validateUser que tu avais déjà préparée !
         const isPasswordValid = this.validateUser(loginData.password, dbo.password);
         
         if (isPasswordValid) {
           return UsersMapper.toDTO(dbo);
         } else {
-          return undefined; // Mot de passe incorrect
+          return undefined; 
         }
       }
     }
-    return undefined; // Utilisateur non trouvé
+    return undefined; 
   }
 }

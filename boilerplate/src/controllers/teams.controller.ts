@@ -14,12 +14,10 @@ export const teamsController = Router();
  * Auth: Not required
  */
 teamsController.get('/', (req: Request, res: Response) => {
-  try {
+
     const teams = TeamsService.getAll();
     res.status(200).json(teams);
-  } catch (error) {
-    res.status(500).send('Internal Server Error');
-  }
+
 });
 
 /**
@@ -28,7 +26,7 @@ teamsController.get('/', (req: Request, res: Response) => {
  * Auth: REQUIRED (Any role)
  */
 teamsController.get('/own', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
-  try {
+ 
     const loggedInUser = req.user; 
     
   if (!loggedInUser) {
@@ -39,9 +37,7 @@ teamsController.get('/own', AuthService.authorize, (req: AuthenticatedRequest, r
     const ownTeams = TeamsService.getOwnTeams(loggedInUser.id);
     
     res.status(200).json(ownTeams);
-  } catch (error) {
-    res.status(500).send('Internal Server Error');
-  }
+ 
 });
 
 /**
@@ -50,7 +46,7 @@ teamsController.get('/own', AuthService.authorize, (req: AuthenticatedRequest, r
  * Auth: Not required
  */
 teamsController.get('/:id', (req: Request, res: Response) => {
-  try {
+ 
     const id = Number(req.params.id);
 
     if (!isNumber(id)) return res.status(400).send('Bad Request: Invalid ID');
@@ -60,9 +56,7 @@ teamsController.get('/:id', (req: Request, res: Response) => {
     if (!team) return res.status(404).send('Not Found: Team does not exist');
 
     res.status(200).json(team);
-  } catch (error) {
-    res.status(500).send('Internal Server Error');
-  }
+  
 });
 
 /**
@@ -71,7 +65,7 @@ teamsController.get('/:id', (req: Request, res: Response) => {
  * Auth: REQUIRED (Role 'trainer' only)
  */
 teamsController.post('/', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
-  try {
+ 
     const loggedInUser = req.user;
 
     if (!loggedInUser) {
@@ -94,9 +88,8 @@ teamsController.post('/', AuthService.authorize, (req: AuthenticatedRequest, res
     const newTeam = TeamsService.create(teamData, loggedInUser.id);
 
     res.status(201).json(newTeam);
-  } catch (error) {
-    res.status(500).send('Internal Server Error');
-  }
+  
+  
 });
 
 /**
@@ -105,7 +98,7 @@ teamsController.post('/', AuthService.authorize, (req: AuthenticatedRequest, res
  * Auth: REQUIRED (Role 'trainer' only)
  */
 teamsController.put('/:id', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
-  try {
+
     const loggedInUser = req.user;
 
     if (!loggedInUser) {
@@ -134,9 +127,7 @@ teamsController.put('/:id', AuthService.authorize, (req: AuthenticatedRequest, r
     }
 
     res.status(200).json(updatedTeam);
-  } catch (error) {
-    res.status(500).send('Internal Server Error');
-  }
+ 
 });
 
 /**
@@ -145,7 +136,7 @@ teamsController.put('/:id', AuthService.authorize, (req: AuthenticatedRequest, r
  * Auth: REQUIRED (Any role)
  */
 teamsController.patch('/:id/join', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
-  try {
+
     const loggedInUser = req.user;
 
     if (!loggedInUser) {
@@ -163,9 +154,7 @@ teamsController.patch('/:id/join', AuthService.authorize, (req: AuthenticatedReq
     if (updatedTeam === null) return res.status(400).send('Bad Request: User already in the team');
 
     res.status(200).json(updatedTeam);
-  } catch (error) {
-    res.status(500).send('Internal Server Error');
-  }
+
 });
 
 /**
@@ -174,7 +163,7 @@ teamsController.patch('/:id/join', AuthService.authorize, (req: AuthenticatedReq
  * Auth: REQUIRED (Any role)
  */
 teamsController.patch('/:id/leave', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
-  try {
+
     const loggedInUser = req.user;
 
     if (!loggedInUser) {
@@ -193,7 +182,5 @@ teamsController.patch('/:id/leave', AuthService.authorize, (req: AuthenticatedRe
     }
 
     res.status(200).json(updatedTeam);
-  } catch (error) {
-    res.status(500).send('Internal Server Error');
-  }
+
 });

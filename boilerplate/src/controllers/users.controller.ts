@@ -2,7 +2,7 @@ import e, { Request, Response, Router } from 'express';
 import { UsersService } from '../services/users.service';
 import { isNewUserDTO, isNumber, isString } from '../utils/guards';
 import { LoggerService } from '../services/logger.service';
-import { isUserLoginDTO } from '../utils/guards';
+import { isUserLoginDTO,isUserDTO } from '../utils/guards';
 import { AuthService } from '../services/auth.service';
 import { EROLES } from '../models/user.model';
 import { AuthenticatedRequest } from '../models/auth.model';
@@ -117,7 +117,10 @@ usersController.delete('/:id', (req: Request, res: Response) => {
 
 });
 
-
+/**
+ * GET  /users/:id
+ * get full users infos
+ */
 usersController.get('/:id', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
  
     const loggedInUser = req.user;
@@ -142,6 +145,46 @@ usersController.get('/:id', AuthService.authorize, (req: AuthenticatedRequest, r
       return res.status(403).send('Forbidden: You are not allowed to access the data of other users');
     }
   });
+
+  /**
+ * PUT /users/:id
+ * Update a profil from a user
+ */
+usersController.put('/:id', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
+  
+    const loggedInUser = req.user;
+    const id = Number(req.params.id);
+    const bodyData = req.body;
+
+    
+    if (!loggedInUser) return res.status(401).send("Unauthorized");
+    if (!isNumber(id)) return res.status(400).send('Bad Request: Invalid ID');
+    
+    //  Guard : Is a user
+    if (!isUserDTO(bodyData)) {
+      return res.status(400).send('Bad Request: Invalid body data');
+    }
+    
+  
+    if (id !== bodyData.id) {
+      return res.status(400).send('Bad Request: Path ID and Body ID mismatch');
+    }
+
+    // auth: Only admin or refeere can see
+    if (loggedInUser.role !== EROLES.ADMIN && loggedInUser.id !== id) {
+      return res.status(403).send('Forbidden: Cannot update another user');
+    }
+
+    // call services 
+    const updatedUser = UsersService.update(id, bodyData);
+
+    if (!updatedUser) {
+      return res.status(404).send('Not Found: User not found or inactive');
+    }
+
+    return res.status(200).json(updatedUser);
+ 
+});
   
 
 
