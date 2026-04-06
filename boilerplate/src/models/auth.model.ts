@@ -1,18 +1,15 @@
-// import { Request } from 'express'; 
-// import { User, EROLES } from './user.model'; 
+// src/models/auth.model.ts
+import { EROLES } from "./user.model";
 
-// export interface AuthenticatedRequest extends Request {
-//   user    ?: User; 
-// }
+// Ce que le client envoie pour se connecter
+export interface UserLoginDTO {
+  username: string;
+  password: string;
+}
 
-// //description:	Credentials used to authenticate a user
-// export interface UserLoginDTO {
-//   username : string;
-//   password : string;
-// }
-
-// export interface authenticatedUserDTO {
-//   username : string ;
-//   token    : string;
-//   role     : EROLES;
-// }
+// Ce que le serveur répond si la connexion réussit (défini par le Swagger)
+export interface AuthenticatedUserDTO {
+  username: string;
+  token: string;
+  role: EROLES;
+}

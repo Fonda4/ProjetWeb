@@ -1,0 +1,48 @@
+
+@server = http://localhost:3000
+@adminuser = admin
+@adminpassword = admin
+@playeruser = player
+@playerpassword = player
+
+###
+## Login as admin
+# @name admin_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "username": "{{adminuser}}",
+  "password": "{{adminpassword}}"
+}
+
+###
+## Login as player
+# @name player_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "username": "{{playeruser}}",
+  "password": "{{playerpassword}}"
+}
+
+###
+## Wrong password
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "username": "{{adminuser}}",
+  "password": "notthepassword"
+}
+
+###
+## Wrong user
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "username": "nottheadmin",
+  "password": "{{adminpassword}}"
+}

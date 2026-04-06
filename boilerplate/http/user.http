@@ -1,0 +1,21 @@
+### 1. Création d'un utilisateur valide (Happy Path)
+POST http://localhost:3000/users HTTP/1.1
+Content-Type: application/json
+
+{
+    "firstName": "Alice",
+    "lastName": "Dupont",
+    "email": "alice.dupont@example.com",
+    "username": "aliced",
+    "password": "MonSuperMotDePasse123!"
+}
+
+### 2. Test d'erreur : Données manquantes (Manque le mot de passe et l'email)
+POST http://localhost:3000/users HTTP/1.1
+Content-Type: application/json
+
+{
+    "firstName": "Bob",
+    "lastName": "L'éponge",
+    "username": "bob_eponge"
+}

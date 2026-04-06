@@ -2,9 +2,6 @@ import { Request, Response, Router } from 'express';
 import { UsersService } from '../services/users.service';
 import { isNewUserDTO, isNumber, isString } from '../utils/guards';
 import { LoggerService } from '../services/logger.service';
-import { isUserLoginDTO } from '../utils/guards';
-import { AuthService } from '../services/auth.service';
-import { EROLES } from '../models/user.model';
 
 export const usersController = Router();
 
@@ -12,29 +9,15 @@ export const usersController = Router();
  * GET /users
  * Récupère tous les utilisateurs actifs
  */
-usersController.get('/', AuthService.authorize, (req: Request, res: Response) => {
+usersController.get('/', (req: Request, res: Response) => {
   try {
-    const loggedInUser = (req as any).user; // L'utilisateur qui fait la requête
-    const usersDTO = UsersService.getAll();
+    // Appel au service (qui nous retourne directement des DTOs)
+    const users = UsersService.getAll();
     
-    // Si l'utilisateur est admin, il reçoit la liste complète
-    if (loggedInUser.role === EROLES.ADMIN) {
-      return res.status(200).json(usersDTO);
-    }
-    
-    // Sinon, on doit transformer la liste en ShortDTO
-    const shortUsers = [];
-    for (const user of usersDTO) {
-      // On passe par le service pour simuler le DBO, ou on convertit manuellement
-      shortUsers.push({
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName
-      });
-    }
-    
-    res.status(200).json(shortUsers);
+    // Happy Path : on renvoie les données avec un code 200 (OK)
+    res.status(200).json(users);
   } catch (error) {
+    // Si le service lève une erreur (ex: fichier introuvable)
     res.status(500).send('Internal Server Error');
   }
 });
@@ -119,6 +102,3 @@ usersController.delete('/:id', (req: Request, res: Response) => {
     res.status(500).send('Internal Server Error');
   }
 });
-
-
-

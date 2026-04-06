@@ -1,0 +1,117 @@
+###
+# SCENARIO 5
+# 
+# A trainer creates, then modifies a team.
+# A player joins, leaves, then re-joins the team.
+# The player then retrieves the list of their own teams.
+#
+# REQUIRES the implementation of [POST auth/login]
+# REQUIRES the implementation of [POST teams/] and [PUT teams/:id]
+# REQUIRES the implementation of [PATCH teams/:id/join] and [PATCH teams/:id/leave]
+# REQUIRES the implementation of [GET teams/own]
+# REQUIRES that users.json contain a user with the role trainer and a user with the role player.
+# ASSUMES that this trainer has the login "trainer" and password "trainer".
+# ASSUMES that this player has the login "player" and password "player".
+#       This can be changed via the variables below if your data is different.
+# DOES NOT REQUIRE any data in teams.json
+# 
+# Example: data/users.json
+# [
+#   {
+#     "id": 2,
+#     "first_name": "player",
+#     "last_name": "player",
+#     "email": "player@vinci.be",
+#     "username": "player",
+#     "password": "$2b$10$Rw1v91gI3acCFv3JFQUTdegfQnHfwtbx92odcxxJSkL/RjTA2pcT2",
+#     "role": "player",
+#     "status": "active",
+#     "created_at": "2026-03-26T23:06:18.287Z",
+#     "updated_at": "2026-03-26T23:11:50.984Z"
+#   },
+#   {
+#     "id": 4,
+#     "first_name": "trainer",
+#     "last_name": "trainer",
+#     "email": "trainer@vinci.be",
+#     "username": "trainer",
+#     "password": "$2b$10$DXuY8/ihaXXmzse/xMtz9e1ykeG9GH7Pv04DGYYYEWiT9wQkgBdbC",
+#     "role": "trainer",
+#     "status": "active",
+#     "created_at": "2026-03-26T23:06:22.873Z",
+#     "updated_at": "2026-03-26T23:06:22.873Z"
+#   }
+# ]
+
+# Definition of variables used in the tests
+@server = http://localhost:3000
+@tuser = trainer
+@tpassword = trainer
+@puser = player
+@ppassword = player
+
+### Login as trainer
+# @name trainer_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+    "username": "{{tuser}}",
+    "password": "{{tpassword}}"
+}
+
+### Creates a new team
+# MUST receive the TeamDTO of the created team
+# @name newteam
+POST {{server}}/teams HTTP/1.1
+Content-Type: application/json
+Authorization: {{trainer_login.response.body.token}}
+
+{
+  "name": "We are the champions",
+  "sportType": "volleyball"
+}
+
+### Modifies the created team
+# MUST receive the TeamDTO of the modified team
+PUT {{server}}/teams/{{newteam.response.body.id}} HTTP/1.1
+Content-Type: application/json
+Authorization: {{trainer_login.response.body.token}}
+
+{
+  "id": {{newteam.response.body.id}},
+  "name": "We are the champions",
+  "sportType": "football",
+  "players": [],
+  "trainerId": {{newteam.response.body.trainerId}}
+}
+
+### Login as player
+# @name player_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+    "username": "{{puser}}",
+    "password": "{{ppassword}}"
+}
+
+### Joins the team
+# MUST receive a TeamDTO with player added to the team.
+PATCH {{server}}/teams/{{newteam.response.body.id}}/join HTTP/1.1
+Authorization: {{player_login.response.body.token}}
+
+### Leaves the team
+# MUST receive a TeamDTO with player removed from the team.
+PATCH {{server}}/teams/{{newteam.response.body.id}}/leave HTTP/1.1
+Authorization: {{player_login.response.body.token}}
+
+### Joins the team
+# MUST receive a TeamDTO with player added to the team.
+PATCH {{server}}/teams/{{newteam.response.body.id}}/join HTTP/1.1
+Authorization: {{player_login.response.body.token}}
+
+### List own teams
+# MUST receive a list of TeamDTO with (at least) the new team inside.
+GET {{server}}/teams/own HTTP/1.1
+Authorization: {{player_login.response.body.token}}

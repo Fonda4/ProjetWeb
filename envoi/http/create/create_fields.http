@@ -1,0 +1,48 @@
+###
+# Create a few starting fields
+# Assumes that create_users.http has been run before.
+# 
+
+@server = http://127.0.0.1:3000
+@adminuser = admin
+@adminpassword = admin
+
+###
+## Login as admin
+# @name admin_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "username": "{{adminuser}}",
+  "password": "{{adminpassword}}"
+}
+
+###
+# Create a few fields
+POST {{server}}/fields HTTP/1.1
+Content-Type: application/json
+Authorization: {{admin_login.response.body.token}}
+
+{
+    "name": "Nice field",
+    "location": "Belgium"
+}
+###
+POST {{server}}/fields HTTP/1.1
+Content-Type: application/json
+Authorization: {{admin_login.response.body.token}}
+
+{
+    "name": "Not so nice",
+    "location": "Belgium"
+}
+###
+POST {{server}}/fields HTTP/1.1
+Content-Type: application/json
+Authorization: {{admin_login.response.body.token}}
+
+{
+    "name": "Le Terrain Français",
+    "location": "France"
+}

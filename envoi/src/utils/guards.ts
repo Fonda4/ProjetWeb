@@ -1,9 +1,8 @@
 //import { FieldDTO, NewFieldDTO } from "../models/field.model";
 //import { EGameStatus, GameDTO, NewGameDTO } from "../models/games.model";
-import { ESportType, NewTeamDTO, TeamDTO } from "../models/teams.model";
+//import { ESportType, NewTeamDTO, TeamDTO } from "../models/teams.model";
 import { EROLES, EUserStatus, NewUserDTO, UserDTO,} from "../models/user.model";
-import { UserLoginDTO } from "../models/auth.model";
-
+// UserLoginDTO 
 export function isNumber(obj: any): obj is number {
   return typeof obj === 'number' && !isNaN(obj) && isFinite(obj);
 }
@@ -30,11 +29,11 @@ export function isNewUserDTO(obj: any): obj is NewUserDTO {
     obj.username && isNonEmptyString(obj.username)
 }
 
-export function isUserLoginDTO(obj: any): obj is UserLoginDTO {
-  return obj && typeof obj === 'object' &&
-    obj.username && isNonEmptyString(obj.username) &&
-    obj.password && isNonEmptyString(obj.password)
-}
+// export function isUserLoginDTO(obj: any): obj is UserLoginDTO {
+//   return obj && typeof obj === 'object' &&
+//     obj.username && isNonEmptyString(obj.username) &&
+//     obj.password && isNonEmptyString(obj.password)
+// }
 
 export function isUserDTO(obj: any): obj is UserDTO {
   return obj && typeof obj === 'object' &&
@@ -55,27 +54,27 @@ export function isUserStatus(obj: any): obj is EUserStatus {
   return Object.values(EUserStatus).includes(obj);
 }
 
-// == TEAM ==
-export function isESportType(obj: any): obj is ESportType {
-  return Object.values(ESportType).includes(obj);
-}
+// // == TEAM ==
+// export function isESportType(obj: any): obj is ESportType {
+//   return Object.values(ESportType).includes(obj);
+// }
 
-export function isNewTeamDTO(obj: any): obj is NewTeamDTO {
-  return obj && typeof obj === 'object' &&
-    obj.name && isNonEmptyString(obj.name) && 
-    obj.sportType && isString(obj.sportType) && isESportType(obj.sportType) && 
-    (!obj.description || isString(obj.description))
-}
+// export function isNewTeamDTO(obj: any): obj is NewTeamDTO {
+//   return obj && typeof obj === 'object' &&
+//     obj.name && isNonEmptyString(obj.name) && 
+//     obj.sportType && isString(obj.sportType) && isESportType(obj.sportType) && 
+//     (!obj.description || isString(obj.description))
+// }
 
-export function isTeamDTO(obj: any): obj is TeamDTO {
-  return obj && typeof obj === 'object' && 
-    obj.id !== undefined && isNumber(obj.id) && 
-    obj.name && isNonEmptyString(obj.name) && 
-    obj.sportType && isString(obj.sportType) && isESportType(obj.sportType) && 
-    (!obj.description || isString(obj.description)) && 
-    obj.players && isObject(obj.players) && 
-    obj.trainerId && isNumber(obj.trainerId);
-}
+// export function isTeamDTO(obj: any): obj is TeamDTO {
+//   return obj && typeof obj === 'object' && 
+//     obj.id !== undefined && isNumber(obj.id) && 
+//     obj.name && isNonEmptyString(obj.name) && 
+//     obj.sportType && isString(obj.sportType) && isESportType(obj.sportType) && 
+//     (!obj.description || isString(obj.description)) && 
+//     obj.players && isObject(obj.players) && 
+//     obj.trainerId && isNumber(obj.trainerId);
+// }
 
 // // == GAME ==
 // export function isNewGameDTO(obj: any): obj is NewGameDTO {

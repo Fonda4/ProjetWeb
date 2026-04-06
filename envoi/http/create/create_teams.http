@@ -1,0 +1,83 @@
+###
+# Create a few starting teams
+# Assumes that create_users.http has been run before.
+#
+
+@server = http://127.0.0.1:3000
+@traineruser = trainer
+@trainerpassword = trainer
+
+###
+## Login as trainer
+# @name trainer_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "username": "{{traineruser}}",
+  "password": "{{trainerpassword}}"
+}
+
+###
+# Create a few teams with different sports
+#
+POST {{server}}/teams HTTP/1.1
+Content-Type: application/json
+Authorization: {{trainer_login.response.body.token}}
+
+{
+    "name": "Football Club Bruxelles",
+    "description": "A nice team",
+    "sportType": "football"
+}
+###
+POST {{server}}/teams HTTP/1.1
+Content-Type: application/json
+Authorization: {{trainer_login.response.body.token}}
+
+{
+    "name": "Football Club Mons",
+    "description": "A not so competitive football team",
+    "sportType": "football"
+}
+###
+POST {{server}}/teams HTTP/1.1
+Content-Type: application/json
+Authorization: {{trainer_login.response.body.token}}
+
+{
+    "name": "Tennis Club Bruxelles",
+    "description": "A nice tennis team",
+    "sportType": "tennis"
+}
+###
+POST {{server}}/teams HTTP/1.1
+Content-Type: application/json
+Authorization: {{trainer_login.response.body.token}}
+
+{
+    "name": "Tennis Club Mons",
+    "description": "A rising tennis team",
+    "sportType": "tennis"
+}
+###
+POST {{server}}/teams HTTP/1.1
+Content-Type: application/json
+Authorization: {{trainer_login.response.body.token}}
+
+{
+    "name": "Basket Club Bruxelles",
+    "description": "A nice basketball team",
+    "sportType": "basketball"
+}
+
+###
+POST {{server}}/teams HTTP/1.1
+Content-Type: application/json
+Authorization: {{trainer_login.response.body.token}}
+
+{
+    "name": "Basket Club Mons",
+    "description": "A rising basketball team",
+    "sportType": "basketball"
+}
