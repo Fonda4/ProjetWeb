@@ -55,3 +55,13 @@ export interface UserDBO extends BasicModelDBO {
   role: EROLES;
   status: EUserStatus;
 }
+// 5. Full DTO : A version of the UserDTO that contains all the details, used for example in GET /users/:id for admin users
+export interface UserFullDTO extends BasicModelDTO {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  username: string;
+  role: EROLES;
+  status: EUserStatus;
+}

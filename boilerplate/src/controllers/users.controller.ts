@@ -1,4 +1,4 @@
-import { Request, Response, Router } from 'express';
+import e, { Request, Response, Router } from 'express';
 import { UsersService } from '../services/users.service';
 import { isNewUserDTO, isNumber, isString } from '../utils/guards';
 import { LoggerService } from '../services/logger.service';
@@ -6,6 +6,7 @@ import { isUserLoginDTO } from '../utils/guards';
 import { AuthService } from '../services/auth.service';
 import { EROLES } from '../models/user.model';
 import { AuthenticatedRequest } from '../models/auth.model';
+import { UsersMapper } from '../mappers/users.mapper';
 
 export const usersController = Router();
 
@@ -15,7 +16,6 @@ export const usersController = Router();
  * Auth: REQUIRED (Any role, but the response differs if admin or not)
  *  */
 usersController.get('/', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
-  try {
     const loggedInUser = req.user; 
 
     if (!loggedInUser) {
@@ -40,9 +40,7 @@ usersController.get('/', AuthService.authorize, (req: AuthenticatedRequest, res:
     }
     
     res.status(200).json(shortUsers);
-  } catch (error) {
-    res.status(500).send('Internal Server Error');
-  }
+
 });
 
 /**
@@ -51,7 +49,6 @@ usersController.get('/', AuthService.authorize, (req: AuthenticatedRequest, res:
  * Auth: Not required (This endpoint is used by the AuthService during login, so it cannot require authentication itself)
  */
 usersController.get('/username/:username', (req: Request, res: Response) => {
-  try {
     const username = req.params.username;
 
     // 1. Guard : Vérification from the URL parameter (is it a non-empty string ?)
@@ -69,9 +66,7 @@ usersController.get('/username/:username', (req: Request, res: Response) => {
 
     // 4. Happy Path
     res.status(200).json(user);
-  } catch (error) {
-    res.status(500).send('Internal Server Error');
-  }
+
 });
 
 /**
@@ -80,7 +75,6 @@ usersController.get('/username/:username', (req: Request, res: Response) => {
  * Auth: Not required (This endpoint is used for registration, so it cannot require authentication)
  */
 usersController.post('/', (req: Request, res: Response) => {
-  try {
     const userData = req.body;
 
     // 1. Guard : Vérification strict from the body (are all required fields present and valid ?)
@@ -93,9 +87,7 @@ usersController.post('/', (req: Request, res: Response) => {
 
     // 3. Happy Path : Code 201 (Created) for a successful creation, and we return the created user (without the password of course)
     res.status(201).json(newUser);
-  } catch (error) {
-    res.status(500).send('Internal Server Error');
-  }
+
 });
 
 /**
@@ -103,7 +95,7 @@ usersController.post('/', (req: Request, res: Response) => {
  * delete a user (soft delete by changing their status to INACTIVE)
  */
 usersController.delete('/:id', (req: Request, res: Response) => {
-  try {
+ 
     // url parameter is always a string, so we need to convert it to a number before using our guard isNumber as seen in class
     const id = Number(req.params.id);
 
@@ -122,12 +114,35 @@ usersController.delete('/:id', (req: Request, res: Response) => {
 
     // 4. Happy Path : Code 204 (No Content) because we don't return any content in the response body when a resource is successfully deleted
     res.status(204).send();
-  } catch (error) {
-    res.status(500).send('Internal Server Error');
-  }
+
 });
 
 
+usersController.get('/:id', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
+ 
+    const loggedInUser = req.user;
+
+    if (!loggedInUser) {
+      return res.status(401).send("Unauthenticated user");
+    }
+    const id = Number(req.params.id);
+
+    if (!isNumber(id)) return res.status(400).send('Bad Request: Invalid ID');
+    
+    const targetUserDBO = UsersService.getById(id);
+
+    if (!targetUserDBO) return res.status(404).send('Not Found: User does not exist');
+    // if the logged-in user is an admin, we return all the details of the target user
+    if (loggedInUser.role === EROLES.ADMIN) {
+      return res.status(200).json(UsersMapper.toDTO(targetUserDBO));
+    } else if (loggedInUser.id === id) {
+      // if the logged-in user is requesting their own data, we return all the details of the target user
+      return res.status(200).json(UsersMapper.toFullDTO(targetUserDBO));
+    } else {
+      return res.status(403).send('Forbidden: You are not allowed to access the data of other users');
+    }
+  });
+  
 
 
 
