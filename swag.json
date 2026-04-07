@@ -1,0 +1,2118 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "Games Manager API",
+        "version": "1.0.0",
+        "description": "REST API for managing sports games, teams, players, and fields.\n\n## Authentication\nProtected routes require an `Authorization` header containing the **base64-encoded username**\nof the authenticated user (e.g. `btoa('admin')` ? `YWRtaW4=`).\nObtain a token by calling `POST /auth/login`.\n"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:3000",
+            "description": "Local development"
+        }
+    ],
+    "tags": [
+        {
+            "name": "Auth",
+            "description": "Authentication and session management"
+        },
+        {
+            "name": "Users",
+            "description": "User accounts and profiles"
+        },
+        {
+            "name": "Teams",
+            "description": "Sports teams and roster management"
+        },
+        {
+            "name": "Games",
+            "description": "Game scheduling, scoring and status"
+        },
+        {
+            "name": "Fields",
+            "description": "Sports fields and venues"
+        }
+    ],
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Log in and obtain an auth token (no auth required)",
+                "description": "No authentication required. Validates `username` and `password` against stored users.\nReturns a `token` (base64-encoded username) to use as the `Authorization` header on\nsubsequent requests, along with the user's `role`.\n",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserLoginDTO"
+                            },
+                            "example": {
+                                "username": "admin",
+                                "password": "AdminPass123!"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthenticatedUserDTO"
+                                },
+                                "example": {
+                                    "username": "admin",
+                                    "token": "YWRtaW4="
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Missing or empty username / password"
+                    },
+                    "401": {
+                        "description": "Invalid credentials"
+                    }
+                }
+            }
+        },
+        "/users": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "List all users (any authenticated user)",
+                "description": "Any authenticated user. Admins receive UserDTO[], others receive UserShortDTO[].\nInactive users excluded.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of users (shape depends on caller role — see description)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/UserShortDTO"
+                                    }
+                                },
+                                "example": [
+                                    {
+                                        "id": 1,
+                                        "firstName": "Admin",
+                                        "lastName": "User"
+                                    },
+                                    {
+                                        "id": 2,
+                                        "firstName": "John",
+                                        "lastName": "Doe"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Create a new user (no auth required)",
+                "description": "No authentication required. Creates a new user account.\nThe `role` field in the request body is ignored — the role is always set to `player` server-side.\nThe `password` is hashed with bcrypt before storage.\n",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NewUserDTO"
+                            },
+                            "example": {
+                                "firstName": "John",
+                                "lastName": "Doe",
+                                "email": "john@example.com",
+                                "username": "johndoe",
+                                "password": "SecurePass123!"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or missing fields"
+                    }
+                }
+            }
+        },
+        "/users/username/{username}": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Find a user by username (admin or referee only)",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "username",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserDTO"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid token, or caller is not admin/referee"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    }
+                }
+            }
+        },
+        "/users/email/{email}": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Find a user by email (admin or referee only)",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "email",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserDTO"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid token, or caller is not admin/referee"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    }
+                }
+            }
+        },
+        "/users/{id}": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get a user by ID (any authenticated user)",
+                "description": "Any authenticated user can call this endpoint.\n- **Admin**: receives `UserDTO`.\n- **Own profile (non-admin)**: receives `UserShortDTO`.\n- **Other user (non-admin)**: returns 403 Forbidden.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User profile. Admins receive `UserDTO`; own profile receives `UserShortDTO`.\n",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "$ref": "#/components/schemas/UserDTO"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/UserShortDTO"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ID is not a valid number"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Non-admin caller tried to view another user's profile"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Update a user (any authenticated user)",
+                "description": "Any authenticated user can call this endpoint.\nAn admin may update any user. A non-admin user may only update their own profile — the\ntoken's user ID must match the `{id}` path parameter; attempting to update another user\nreturns 403. Body must include `id` matching the URL parameter; if body `id` and path `{id}`\ndiffer, the endpoint returns 400. Fields `password`, `role`,\nand `status` in the body are accepted but `role` and `status` are preserved from the stored\nrecord server-side; only `firstName`, `lastName`, `email`, `username` are updated.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserDTO"
+                            },
+                            "example": {
+                                "id": 2,
+                                "firstName": "Jonathan",
+                                "lastName": "Doe",
+                                "email": "jonathan@example.com",
+                                "username": "johndoe",
+                                "role": "player",
+                                "status": "active"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid payload (including body/path ID mismatch)"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not an admin and tries to update another user"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Soft-delete a user (admin or self)",
+                "description": "Requires authentication. An `admin` may soft-delete any user; a non-admin may soft-delete only their own account.\nAttempts to delete another user as non-admin return 403.\nSets the user's status to `inactive`.\nThe user remains in the data store but is excluded from listings and cannot log in.\nAdmin accounts cannot be deleted.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User deleted"
+                    },
+                    "400": {
+                        "description": "Invalid ID or attempt to delete an admin account"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not an admin"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    }
+                }
+            }
+        },
+        "/users/{id}/role/{role}": {
+            "patch": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Change a user's role (admin only)",
+                "description": "Requires `admin` role. Changes the role of the user identified by `{id}`.\nOnly users currently holding the `player` role can be promoted — attempting to change\nthe role of an `admin`, `referee`, or `trainer` returns 400.\nValid target roles are `player`, `referee`, `trainer`, and `admin`.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    },
+                    {
+                        "in": "path",
+                        "name": "role",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/ERole"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated user with new role",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID, invalid role value, or user is not a player"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not an admin"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    }
+                }
+            }
+        },
+        "/users/{id}/reactivate": {
+            "patch": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Reactivate an inactive user (admin only)",
+                "description": "Requires `admin` role. Sets the user's status back to `active`, reversing a soft-delete.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User reactivated (no body)"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not an admin"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    }
+                }
+            }
+        },
+        "/teams": {
+            "get": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "List all teams (no auth required)",
+                "description": "No authentication required. Returns a short view of all teams (`TeamShortDTO`):\nid, name, and sportType only. Does not include player lists or trainer details.\n",
+                "responses": {
+                    "200": {
+                        "description": "List of teams",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/TeamShortDTO"
+                                    }
+                                },
+                                "example": [
+                                    {
+                                        "id": 1,
+                                        "name": "Red Dragons",
+                                        "sportType": "football"
+                                    },
+                                    {
+                                        "id": 2,
+                                        "name": "Blue Eagles",
+                                        "sportType": "football"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Create a new team (trainer only)",
+                "description": "Requires `trainer` role. Creates a new team. The authenticated trainer is automatically\nset as the team's `trainerId` — the `trainerId` field in the body is ignored.\nThe new team is initialized with an empty player list.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NewTeamDTO"
+                            },
+                            "example": {
+                                "name": "Red Dragons",
+                                "description": "A competitive football team",
+                                "sportType": "football"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Team created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TeamDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or missing fields"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not a trainer"
+                    }
+                }
+            }
+        },
+        "/teams/own": {
+            "get": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Get the teams the authenticated user belongs to (any authenticated user)",
+                "description": "Any authenticated user can call this endpoint. Returns the full representation of all\nteams the authenticated user is listed as a player of, or trainer for (`TeamFullDTO`), with player and\ntrainer objects resolved. Returns an empty array if the user is not in any team.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of teams with resolved players and trainer",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/TeamFullDTO"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    }
+                }
+            }
+        },
+        "/teams/{id}": {
+            "get": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Get a team by ID (no auth required)",
+                "description": "No authentication required. Returns the standard representation of a single team (`TeamDTO`)\nwith raw player IDs and trainerId. Returns 400 if `{id}` is not a valid number,\n404 if no team with that ID exists.\n",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Team details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TeamDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid team ID"
+                    },
+                    "404": {
+                        "description": "Team not found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Update a team (trainer only)",
+                "description": "Requires `trainer` role. Replaces the team's fields with the provided values.\nBody must include `id` matching the URL parameter; if body `id` and path `{id}` differ,\nreturns 400. Body must also include `players` (array of IDs)\nand `trainerId`.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TeamDTO"
+                            },
+                            "example": {
+                                "id": 1,
+                                "name": "Red Dragons FC",
+                                "description": "Updated description",
+                                "sportType": "football",
+                                "players": [
+                                    2,
+                                    3
+                                ],
+                                "trainerId": 5
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated team",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TeamDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid payload or ID mismatch"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not a trainer"
+                    },
+                    "404": {
+                        "description": "Team not found"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "\\\"?? NOT TO BE IMPLEMENTED — Delete a team (admin only, for reference only)\\\"",
+                "description": "> **Note for students:** This endpoint is described here for API design completeness only.\n> It is **not required** and **will not be graded**. Do not implement it.\n> In the current implementation, this route is not registered and requests return `404`.\n\nRequires `admin` role. Permanently removes the team from the data store.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Team deleted (no content)"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not an admin"
+                    },
+                    "404": {
+                        "description": "Team not found"
+                    }
+                }
+            }
+        },
+        "/teams/{id}/join": {
+            "patch": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Join a team (any authenticated user)",
+                "description": "Any authenticated user can call this endpoint. Adds the authenticated user to the team's\nplayer list. The user ID is taken from the auth token — no body is required.\nReturns 400 if the user is already a member.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User successfully joined the team",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TeamDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "User is already in the team"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "404": {
+                        "description": "Team not found"
+                    }
+                }
+            }
+        },
+        "/teams/{id}/leave": {
+            "patch": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Leave a team (any authenticated user)",
+                "description": "Any authenticated user can call this endpoint. Removes the authenticated user from the\nteam's player list. The user ID is taken from the auth token — no body is required.\nReturns 404 if the team does not exist or the user is not a member.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated team after user left",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TeamDTO"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "404": {
+                        "description": "Team not found or user not in team"
+                    }
+                }
+            }
+        },
+        "/games": {
+            "get": {
+                "tags": [
+                    "Games"
+                ],
+                "summary": "List upcoming and ongoing games (no auth required)",
+                "description": "No authentication required. Returns a short view of all upcoming and ongoing games\n(`GameShortDTO`). Only games whose `scheduledDate` is today or in the future are included;\npast games are excluded.\n",
+                "responses": {
+                    "200": {
+                        "description": "List of games",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/GameShortDTO"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Games"
+                ],
+                "summary": "Create a new game (referee only)",
+                "description": "Requires `referee` role. Creates a new game. The authenticated referee is automatically\nset as the game's `refereeId` if none is provided in the body. The initial status is\nset automatically: if both `fieldId` and `scheduledDate` are present the status becomes\n`scheduled`; otherwise it is set to `created`.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NewGameDTO"
+                            },
+                            "example": {
+                                "name": "Red Dragons vs Blue Eagles",
+                                "homeTeamId": 1,
+                                "awayTeamId": 2
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Game created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GameDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or missing fields"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not a referee"
+                    }
+                }
+            }
+        },
+        "/games/{id}": {
+            "get": {
+                "tags": [
+                    "Games"
+                ],
+                "summary": "Get a game by ID (no auth required)",
+                "description": "No authentication required. Returns the full representation of a single game (`GameDTO`).\n",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Game details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GameDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID"
+                    },
+                    "404": {
+                        "description": "Game not found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Games"
+                ],
+                "summary": "Update a game (referee only)",
+                "description": "Requires `referee` role. Replaces the game's fields with the provided values.\nBody must include `id` matching the URL parameter; if body `id` and path `{id}` differ,\nreturns 400. Games in `finished` or `cancelled`\nstatus cannot be updated. For games in `started` status, `fieldId`, `refereeId`,\n`homeTeamId`, and `awayTeamId` are locked and cannot be changed.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GameDTO"
+                            },
+                            "example": {
+                                "id": 1,
+                                "name": "Red Dragons vs Blue Eagles — Final",
+                                "status": "scheduled",
+                                "homeTeamId": 1,
+                                "awayTeamId": 2,
+                                "scheduledDate": "2025-06-15T14:00:00.000Z"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated game",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GameDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid payload (including body/path ID mismatch)"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not a referee"
+                    },
+                    "404": {
+                        "description": "Game not found"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Games"
+                ],
+                "summary": "Delete a game (admin only)",
+                "description": "Requires `admin` role. Permanently removes the game from the data store (hard delete).\nThe record cannot be recovered.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Game deleted (no content)"
+                    },
+                    "400": {
+                        "description": "Invalid ID"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not an admin"
+                    },
+                    "500": {
+                        "description": "Failed to delete game"
+                    }
+                }
+            }
+        },
+        "/games/{id}/score/{home}/{away}": {
+            "patch": {
+                "tags": [
+                    "Games"
+                ],
+                "summary": "Set the score of a started game (referee only)",
+                "description": "Requires `referee` role. Overwrites the home and away score of a game with the values\nfrom the URL path parameters. The game must be in `started` status — any other status returns 400.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    },
+                    {
+                        "in": "path",
+                        "name": "home",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "description": "Home team score"
+                    },
+                    {
+                        "in": "path",
+                        "name": "away",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "description": "Away team score"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated game with new score",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GameDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Game not found, not in started status, or invalid score values"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not a referee"
+                    }
+                }
+            }
+        },
+        "/games/{id}/status/{status}": {
+            "patch": {
+                "tags": [
+                    "Games"
+                ],
+                "summary": "Update game status (referee, trainer, or admin)",
+                "description": "Requires `referee`, `trainer`, or `admin` role. Transitions the game to the requested\nstatus. Allowed transitions:\n- `created` ? `cancelled`\n- `scheduled` ? `started` (requires `fieldId`, `refereeId`, `homeTeamId`, and `awayTeamId` to all be set)\n- `scheduled` ? `cancelled`\n- `started` ? `finished`\nAny other transition returns 400.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    },
+                    {
+                        "in": "path",
+                        "name": "status",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/EGameStatus"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated game with new status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GameDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or disallowed status transition, or missing prerequisites for starting"
+                    },
+                    "401": {
+                        "description": "Authenticated user does not have referee, trainer, or admin role"
+                    }
+                }
+            }
+        },
+        "/fields": {
+            "get": {
+                "tags": [
+                    "Fields"
+                ],
+                "summary": "List all fields (no auth required)",
+                "description": "No authentication required. Returns all fields in the system as a `FieldDTO` array.\n",
+                "responses": {
+                    "200": {
+                        "description": "List of fields",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/FieldDTO"
+                                    }
+                                },
+                                "example": [
+                                    {
+                                        "id": 1,
+                                        "name": "Main Stadium",
+                                        "location": "123 Sports Avenue, Paris",
+                                        "createdAt": "2024-01-01T00:00:00.000Z",
+                                        "updatedAt": "2024-01-01T00:00:00.000Z"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Fields"
+                ],
+                "summary": "Create a new field (admin only)",
+                "description": "Requires `admin` role. Creates a new field. Both `name` and `location` are required.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NewFieldDTO"
+                            },
+                            "example": {
+                                "name": "Main Stadium",
+                                "location": "123 Sports Avenue, Paris"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Field created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FieldDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Name or location is missing or invalid"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not an admin"
+                    }
+                }
+            }
+        },
+        "/fields/{id}": {
+            "get": {
+                "tags": [
+                    "Fields"
+                ],
+                "summary": "Get a field by ID (no auth required)",
+                "description": "No authentication required. Returns the full representation of a single field (`FieldDTO`).\n",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Field details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FieldDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID"
+                    },
+                    "404": {
+                        "description": "Field not found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Fields"
+                ],
+                "summary": "Update a field (admin only)",
+                "description": "Requires `admin` role. Replaces the field's `name` and `location` with the provided values.\nBody must include `id` matching the URL parameter; if body `id` and path `{id}` differ,\nreturns 400.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FieldDTO"
+                            },
+                            "example": {
+                                "id": 1,
+                                "name": "Renovated Stadium",
+                                "location": "456 New Street, Lyon"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated field",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FieldDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid payload (including invalid body shape and body/path ID mismatch)"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not an admin"
+                    },
+                    "404": {
+                        "description": "Field not found"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Fields"
+                ],
+                "summary": "\\\"?? NOT TO BE IMPLEMENTED — Delete a field (admin only, for reference only)\\\"",
+                "description": "> **Note for students:** This endpoint is described here for API design completeness only.\n> It is **not required** and **will not be graded**. Do not implement it.\n> In the current implementation, this route is not registered and requests return `404`.\n\nRequires `admin` role. Permanently removes the field from the data store.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Field deleted (no content)"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not an admin"
+                    },
+                    "404": {
+                        "description": "Field not found"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerToken": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "Authorization",
+                "description": "Base64-encoded username. Obtain from `POST /auth/login`.\nExample: `Authorization: YWRtaW4=` (base64 of \\\"admin\\\")\n"
+            }
+        },
+        "parameters": {
+            "IdParam": {
+                "in": "path",
+                "name": "id",
+                "required": true,
+                "schema": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "description": "Numeric resource ID",
+                "example": 1
+            }
+        },
+        "schemas": {
+            "ErrorResponse": {
+                "type": "object",
+                "description": "Canonical JSON error shape. Note: current implementation is mixed and may also return plain\ntext or an empty body on some routes/statuses.\n",
+                "required": [
+                    "error"
+                ],
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "example": "Invalid request body"
+                    }
+                }
+            },
+            "UserLoginDTO": {
+                "type": "object",
+                "description": "Credentials used to authenticate a user",
+                "required": [
+                    "username",
+                    "password"
+                ],
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "example": "admin"
+                    },
+                    "password": {
+                        "type": "string",
+                        "example": "AdminPass123!"
+                    }
+                }
+            },
+            "AuthenticatedUserDTO": {
+                "type": "object",
+                "description": "Successful login response containing the auth token and user role",
+                "required": [
+                    "username",
+                    "token",
+                    "role"
+                ],
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "example": "admin"
+                    },
+                    "token": {
+                        "type": "string",
+                        "description": "Base64-encoded username. Pass as the Authorization header value.",
+                        "example": "YWRtaW4="
+                    },
+                    "role": {
+                        "$ref": "#/components/schemas/ERole"
+                    }
+                }
+            },
+            "EUserStatus": {
+                "type": "string",
+                "enum": [
+                    "active",
+                    "inactive"
+                ],
+                "description": "User account status:\n- `active` — account is active (default)\n- `inactive` — account has been soft-deleted\n"
+            },
+            "ERole": {
+                "type": "string",
+                "enum": [
+                    "admin",
+                    "player",
+                    "referee",
+                    "trainer"
+                ],
+                "description": "User role:\n- `admin` — full administrative access\n- `player` — default role for regular users\n- `referee` — assigned to officiate games\n- `trainer` — assigned to coach a team\n"
+            },
+            "UserShortDTO": {
+                "type": "object",
+                "description": "Minimal user representation. Returned by GET /users and GET /users/:id for non-admin callers.",
+                "required": [
+                    "id",
+                    "firstName",
+                    "lastName"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "firstName": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "lastName": {
+                        "type": "string",
+                        "example": "Doe"
+                    }
+                }
+            },
+            "UserFullDTO": {
+                "type": "object",
+                "description": "Full user profile with timestamps. Not currently used by any endpoint in the reverted code,\nbut kept for documentation purposes.\n",
+                "required": [
+                    "id",
+                    "firstName",
+                    "lastName",
+                    "email",
+                    "username",
+                    "role",
+                    "status",
+                    "createdAt",
+                    "updatedAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "firstName": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "lastName": {
+                        "type": "string",
+                        "example": "Doe"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "john@example.com"
+                    },
+                    "username": {
+                        "type": "string",
+                        "example": "johndoe"
+                    },
+                    "role": {
+                        "$ref": "#/components/schemas/ERole"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/EUserStatus"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-15T10:30:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-06-01T08:00:00.000Z"
+                    }
+                }
+            },
+            "UserDTO": {
+                "type": "object",
+                "description": "**Outbound** user representation — never contains a password in responses.\nReturned by: GET /users (admin callers), POST /users,\nPUT /users/:id, GET /users/username/:username, GET /users/email/:email,\nPATCH /users/:id/role/:role.\n",
+                "required": [
+                    "id",
+                    "firstName",
+                    "lastName",
+                    "email",
+                    "username",
+                    "role",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "firstName": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "lastName": {
+                        "type": "string",
+                        "example": "Doe"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "john@example.com"
+                    },
+                    "username": {
+                        "type": "string",
+                        "example": "johndoe"
+                    },
+                    "password": {
+                        "type": "string",
+                        "description": "Optional — only present in inbound PUT /users/:id body; never returned in outbound responses"
+                    },
+                    "role": {
+                        "$ref": "#/components/schemas/ERole"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/EUserStatus"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    }
+                }
+            },
+            "NewUserDTO": {
+                "type": "object",
+                "description": "Payload for creating a user (POST /users). Role is always forced to `player`.",
+                "required": [
+                    "firstName",
+                    "lastName",
+                    "email",
+                    "username",
+                    "password"
+                ],
+                "properties": {
+                    "firstName": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "lastName": {
+                        "type": "string",
+                        "example": "Doe"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "john@example.com"
+                    },
+                    "username": {
+                        "type": "string",
+                        "example": "johndoe"
+                    },
+                    "password": {
+                        "type": "string",
+                        "description": "Plaintext password — stored hashed server-side",
+                        "example": "SecurePass123!"
+                    }
+                }
+            },
+            "UserDBO": {
+                "type": "object",
+                "description": "**Database object** — shape stored in `data/users.json` (snake_case).\nUsed internally; never returned directly by the API.\n",
+                "required": [
+                    "id",
+                    "email",
+                    "first_name",
+                    "last_name",
+                    "username",
+                    "password",
+                    "role",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "john@example.com"
+                    },
+                    "first_name": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "example": "Doe"
+                    },
+                    "username": {
+                        "type": "string",
+                        "example": "johndoe"
+                    },
+                    "password": {
+                        "type": "string",
+                        "description": "bcrypt hash",
+                        "example": "$2b$10$..."
+                    },
+                    "role": {
+                        "$ref": "#/components/schemas/ERole"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/EUserStatus"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    }
+                }
+            },
+            "ESportType": {
+                "type": "string",
+                "enum": [
+                    "football",
+                    "basketball",
+                    "tennis",
+                    "volleyball",
+                    "handball"
+                ]
+            },
+            "TeamShortDTO": {
+                "type": "object",
+                "description": "Minimal team representation returned by GET /teams",
+                "required": [
+                    "id",
+                    "name",
+                    "sportType"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Red Dragons"
+                    },
+                    "sportType": {
+                        "$ref": "#/components/schemas/ESportType"
+                    }
+                }
+            },
+            "TeamDTO": {
+                "type": "object",
+                "description": "Standard team representation with raw player IDs and trainerId.\nReturned by GET /teams/:id, POST /teams, PUT /teams/:id, PATCH /teams/:id/join, PATCH /teams/:id/leave.\n",
+                "required": [
+                    "id",
+                    "name",
+                    "sportType",
+                    "players",
+                    "trainerId",
+                    "createdAt",
+                    "updatedAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Red Dragons"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "A competitive football team"
+                    },
+                    "sportType": {
+                        "$ref": "#/components/schemas/ESportType"
+                    },
+                    "players": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "description": "Raw player IDs",
+                        "example": [
+                            2,
+                            3
+                        ]
+                    },
+                    "trainerId": {
+                        "type": "integer",
+                        "description": "Raw trainer ID",
+                        "example": 5
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    }
+                }
+            },
+            "TeamFullDTO": {
+                "type": "object",
+                "description": "Full team representation with **resolved** player and trainer objects.\nReturned only by GET /teams/own.\n",
+                "required": [
+                    "id",
+                    "name",
+                    "sportType",
+                    "players",
+                    "trainer",
+                    "createdAt",
+                    "updatedAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Red Dragons"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "A competitive football team"
+                    },
+                    "sportType": {
+                        "$ref": "#/components/schemas/ESportType"
+                    },
+                    "players": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/UserShortDTO"
+                        },
+                        "description": "Resolved player objects",
+                        "example": [
+                            {
+                                "id": 2,
+                                "firstName": "John",
+                                "lastName": "Doe"
+                            }
+                        ]
+                    },
+                    "trainer": {
+                        "$ref": "#/components/schemas/UserShortDTO",
+                        "description": "Resolved trainer object",
+                        "example": {
+                            "id": 5,
+                            "firstName": "Trainer",
+                            "lastName": "One"
+                        }
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    }
+                }
+            },
+            "NewTeamDTO": {
+                "type": "object",
+                "description": "Payload for creating a team (POST /teams)",
+                "required": [
+                    "name",
+                    "sportType"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Red Dragons"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Optional — defaults to empty string",
+                        "example": "A competitive football team"
+                    },
+                    "sportType": {
+                        "$ref": "#/components/schemas/ESportType"
+                    }
+                }
+            },
+            "TeamDBO": {
+                "type": "object",
+                "description": "**Database object** — shape stored in `data/teams.json` (snake_case).\nUsed internally; never returned directly by the API.\n",
+                "required": [
+                    "id",
+                    "name",
+                    "sport_type",
+                    "players",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "sport_type": {
+                        "$ref": "#/components/schemas/ESportType"
+                    },
+                    "players": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    },
+                    "trainer_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "EGameStatus": {
+                "type": "string",
+                "enum": [
+                    "created",
+                    "scheduled",
+                    "started",
+                    "finished",
+                    "cancelled"
+                ],
+                "description": "Lifecycle status of a game (all lowercase):\n- `created` — initial state, no field or date assigned\n- `scheduled` — field and date are set (auto-assigned on create/update)\n- `started` — game is in progress\n- `finished` — game has ended\n- `cancelled` — game was cancelled\n\n**Allowed transitions:**\n- `created` ? `cancelled`\n- `scheduled` ? `started` | `cancelled`\n- `started` ? `finished`\n"
+            },
+            "GameShortDTO": {
+                "type": "object",
+                "description": "Minimal game representation returned by `GET /games`.\nOnly includes fields useful for listing; no scores, no timestamps.\n",
+                "required": [
+                    "id",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/EGameStatus"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Red Dragons vs Blue Eagles"
+                    },
+                    "fieldId": {
+                        "type": "integer",
+                        "nullable": true,
+                        "example": null
+                    },
+                    "homeTeamId": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "awayTeamId": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "scheduledDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "example": "2099-01-01T00:00:00.000Z"
+                    }
+                }
+            },
+            "GameDTO": {
+                "type": "object",
+                "description": "Full game representation returned by most game endpoints.",
+                "required": [
+                    "id",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/EGameStatus"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Red Dragons vs Blue Eagles"
+                    },
+                    "fieldId": {
+                        "type": "integer",
+                        "nullable": true,
+                        "example": 1
+                    },
+                    "refereeId": {
+                        "type": "integer",
+                        "nullable": true,
+                        "example": 4
+                    },
+                    "homeTeamId": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "awayTeamId": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "homeScore": {
+                        "type": "integer",
+                        "nullable": true,
+                        "example": 0
+                    },
+                    "awayScore": {
+                        "type": "integer",
+                        "nullable": true,
+                        "example": 0
+                    },
+                    "scheduledDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "example": "2099-01-01T00:00:00.000Z"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    }
+                }
+            },
+            "NewGameDTO": {
+                "type": "object",
+                "description": "Payload for creating a game (POST /games). All fields are optional.",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Red Dragons vs Blue Eagles"
+                    },
+                    "fieldId": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "refereeId": {
+                        "type": "integer",
+                        "example": 4
+                    },
+                    "homeTeamId": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "awayTeamId": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "scheduledDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2099-01-01T00:00:00.000Z"
+                    }
+                }
+            },
+            "NewFieldDTO": {
+                "type": "object",
+                "description": "Payload for creating a field (POST /fields).",
+                "required": [
+                    "name",
+                    "location"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Main Stadium"
+                    },
+                    "location": {
+                        "type": "string",
+                        "example": "123 Sports Avenue, Paris"
+                    }
+                }
+            },
+            "GameDBO": {
+                "type": "object",
+                "description": "**Database object** — shape stored in `data/games.json` (snake_case).\nUsed internally; never returned directly by the API.\n",
+                "required": [
+                    "id",
+                    "status",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/EGameStatus"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "field_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "referee_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "home_team_id": {
+                        "type": "integer"
+                    },
+                    "away_team_id": {
+                        "type": "integer"
+                    },
+                    "home_score": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "away_score": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "scheduled_date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "FieldDTO": {
+                "type": "object",
+                "description": "Field representation returned by field endpoints.",
+                "required": [
+                    "id",
+                    "name",
+                    "location"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Main Stadium"
+                    },
+                    "location": {
+                        "type": "string",
+                        "example": "123 Sports Avenue, Paris"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    }
+                }
+            },
+            "FieldDBO": {
+                "type": "object",
+                "description": "**Database object** — shape stored in `data/fields.json` (snake_case).\nUsed internally; never returned directly by the API.\n",
+                "required": [
+                    "id",
+                    "name",
+                    "location",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "location": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            }
+        }
+    }
+}
