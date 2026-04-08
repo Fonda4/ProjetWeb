@@ -8,6 +8,8 @@ export enum EROLES {
   TRAINER = 'trainer'
 }
 
+
+
 // status of a user (active or inactive)
 export enum EUserStatus {
   ACTIVE = 'active',

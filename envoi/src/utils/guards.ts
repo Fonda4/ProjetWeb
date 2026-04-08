@@ -37,14 +37,14 @@ export function isUserLoginDTO(obj: any): obj is UserLoginDTO {
 }
 
 export function isUserDTO(obj: any): obj is UserDTO {
-  return obj && typeof obj === 'object' &&
-    obj.email && isNonEmptyString(obj.email) &&
-    obj.firstName && isNonEmptyString(obj.firstName) &&
-    obj.lastName && isNonEmptyString(obj.lastName) && 
-    obj.username && isNonEmptyString(obj.username) && 
-    obj.id !== undefined && isNumber(obj.id) &&
-    obj.status && isString(obj.status) && isUserStatus(obj.status) && 
-    obj.role && isString(obj.role) && isUserRole(obj.role)
+return obj && typeof obj === 'object' &&
+obj.email && isNonEmptyString(obj.email) &&
+obj.firstName && isNonEmptyString(obj.firstName) &&
+obj.lastName && isNonEmptyString(obj.lastName) &&
+obj.username && isNonEmptyString(obj.username) &&
+obj.id !== undefined && isNumber(obj.id) &&
+(obj.status === undefined || (obj.status && isString(obj.status) && isUserStatus(obj.status))) &&
+(obj.role === undefined || (obj.role && isString(obj.role) && isUserRole(obj.role)))
 }
 
 export function isUserRole(obj: any): obj is EROLES {
