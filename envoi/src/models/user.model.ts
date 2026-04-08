@@ -1,6 +1,6 @@
 import { BasicModelDBO, BasicModelDTO } from "./basic.model";
 
-// Les différents rôles possibles pour un utilisateur
+// different roles of users in our system
 export enum EROLES {
   ADMIN = 'admin',
   PLAYER = 'player',
@@ -8,24 +8,24 @@ export enum EROLES {
   TRAINER = 'trainer'
 }
 
-// Le statut de l'utilisateur (utile pour le "soft delete" ou la désactivation)
+// status of a user (active or inactive)
 export enum EUserStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive'
 }
 
-// 1. DTO de création : Ce que le client envoie lors d'un POST /users
-// Note : Il n'y a pas d'ID ni de dates de création ici, car c'est le serveur qui s'en charge !
+// 1. Creation DTO: What the client sends on a POST /users
+// Note: There is no ID or creation dates here, as the server handles them!
 export interface NewUserDTO {
   firstName: string;
   lastName: string;    
   email: string;
   username: string;
   password: string;
-  role?: EROLES; // Optionnel si on force le rôle par défaut (ex: player)
+  role?: EROLES; // optional, because if not provided, we will assign the default role 'player' in the service
 }
 
-// 2. DTO classique : Ce que le serveur renvoie au client (sans le mot de passe pour la sécurité)
+// 2. classic DTO : What we return when we send user data to the client (for example in GET /users or GET /users/:id)
 export interface UserDTO extends BasicModelDTO {
   id: number;
   firstName: string;
@@ -36,15 +36,15 @@ export interface UserDTO extends BasicModelDTO {
   status: EUserStatus;
 }
 
-// 3. DTO résumé : Ce qu'on renvoie aux utilisateurs non-admin (pour ne pas exposer l'email)
+// 3. short DTO : A simplified version of the UserDTO that we will return to non-admin users (without email and username for security reasons)
 export interface UserShortDTO {
   id: number;
   firstName: string;
   lastName: string;
 }
 
-// 4. DBO : Comment la donnée est réellement stockée dans notre "base de données" (fichiers JSON)
-// Utilisation du snake_case (first_name au lieu de firstName)
+// 4. DBO : How the user is stored in the database (snake_case for the database)
+// snake_case for the database
 export interface UserDBO extends BasicModelDBO {
   id: number;
   email: string;
@@ -52,6 +52,16 @@ export interface UserDBO extends BasicModelDBO {
   last_name: string;
   username: string;
   password: string;
+  role: EROLES;
+  status: EUserStatus;
+}
+// 5. Full DTO : A version of the UserDTO that contains all the details, used for example in GET /users/:id for admin users
+export interface UserFullDTO extends BasicModelDTO {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  username: string;
   role: EROLES;
   status: EUserStatus;
 }

@@ -1,7 +1,13 @@
-import express, { type Express } from 'express'
+import express, { type Express } from 'express';
+import { authController } from './controllers/auth.controller';
+import { usersController } from './controllers/users.controller';
+import { teamsController } from './controllers/teams.controller';
+// import { fieldsController } from './controllers/fields.controller';
+// import { gamesController } from './controllers/games.controller';
 
 export const app : Express = express();
 
+// enabling JSON body parsing for incoming requests
 app.use(express.json());
 
 // --- CORS for swagger and development ---
@@ -19,6 +25,14 @@ app.use((req, res, next) => {
   next();
 });
 
+// --- registering routes ---
+app.use('/auth', authController);
+app.use('/users', usersController);
+app.use('/teams', teamsController);
+// app.use('/fields', fieldsController);
+// app.use('/games', gamesController);
+
+// Test route to check if the server is running
 app.get('/', (req, res) => {
-  res.send('Hello World!');
+  res.send('Bienvenue sur l\'API Games Manager !');
 });

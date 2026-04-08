@@ -1,42 +1,56 @@
-// import { BasicModel } from "./basic.model";
-// import { UserShortDTO } from "./user.model";
+import { BasicModelDBO, BasicModelDTO } from "./basic.model";
+import { UserShortDTO } from "./user.model";
 
-// export enum ESportType{
-//     FOOTBALL = 'FOOTBALL',
-//     BASKETBALL = 'BASKETBALL',
-//     TENNIS = 'TENNIS',
-//     VOLLEYBALL = 'VOLLEYBALL',
-//     HANDBALL = 'HANDBALL'
-// }
+// Enum for the different types of sports that a team can be associated with
+export enum ESportType {
+  FOOTBALL = 'football',
+  BASKETBALL = 'basketball',
+  TENNIS = 'tennis',
+  VOLLEYBALL = 'volleyball',
+  HANDBALL = 'handball'
+}
 
-// export interface TeamShortDTO {
-// id : number,
-// name : string,
-// sporType : ESportType;
-// }
+// client sends when creating a new team (POST /teams)
+export interface NewTeamDTO {
+  name: string;
+  description?: string; 
+  sportType: ESportType;
+}
 
-// export interface TeamDTO extends BasicModel{
-//     id : number,
-//     name : string,
-//     description	?: string,
-//     sportType :	ESportType,
-//     players :'listplayer',
-//     trainerId :	number;
-// }
+//short version of the team, used in lists (for example in GET /teams)
+export interface TeamShortDTO {
+  id: number;
+  name: string;
+  sportType: ESportType;
+}
 
-// export interface TeamFULLDTO extends BasicModel{
-//     id : number,
-//     name : string,
-//     description	?: string,
-//     sportType :	ESportType,
-//     players :'listplayer',
-//     trainerId :	UserShortDTO;
-// }
+// Classic version of the team, used in GET /teams/:id 
+export interface TeamDTO extends BasicModelDTO {
+  id: number;
+  name: string;
+  description?: string;
+  sportType: ESportType;
+  players: number[];     //Table of player IDs (we will resolve them to UserShortDTO in the service)
+  trainerId?: number;    // ID de l'entraîneur (optionnel au début)
+}
 
+// Full version of the team, used in GET /teams/own 
+export interface TeamFullDTO extends BasicModelDTO {
+  id: number;
+  name: string;
+  description?: string;
+  sportType: ESportType;
+  players: UserShortDTO[]; // Ici, ce sont les vrais objets utilisateurs résumés !
+  trainer?: UserShortDTO;
+}
 
-// export interface NewTeamDTO {
-//     name : string,
-//     description	?: string,
-//     sportType : ESportType,
-// }
-
+// 6. How the team is stored in the database (snake_case for the database)
+ // snake_case for the database
+export interface TeamDBO extends BasicModelDBO {
+  id: number;
+  name: string;
+  description?: string;
+  sport_type: ESportType; 
+  players: number[];
+  trainer_id?: number | null; 
+}

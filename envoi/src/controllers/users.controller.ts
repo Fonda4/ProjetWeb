@@ -1,104 +1,191 @@
-import { Request, Response, Router } from 'express';
+import e, { Request, Response, Router } from 'express';
 import { UsersService } from '../services/users.service';
 import { isNewUserDTO, isNumber, isString } from '../utils/guards';
 import { LoggerService } from '../services/logger.service';
+import { isUserLoginDTO,isUserDTO } from '../utils/guards';
+import { AuthService } from '../services/auth.service';
+import { EROLES } from '../models/user.model';
+import { AuthenticatedRequest } from '../models/auth.model';
+import { UsersMapper } from '../mappers/users.mapper';
 
 export const usersController = Router();
 
 /**
  * GET /users
- * Récupère tous les utilisateurs actifs
- */
-usersController.get('/', (req: Request, res: Response) => {
-  try {
-    // Appel au service (qui nous retourne directement des DTOs)
-    const users = UsersService.getAll();
+ * Retrieves the list of all users
+ * Auth: REQUIRED (Any role, but the response differs if admin or not)
+ *  */
+usersController.get('/', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
+    const loggedInUser = req.user; 
+
+    if (!loggedInUser) {
+      return res.status(401).send("Unauthenticated user");
+    }
+    const usersDTO = UsersService.getAll();
     
-    // Happy Path : on renvoie les données avec un code 200 (OK)
-    res.status(200).json(users);
-  } catch (error) {
-    // Si le service lève une erreur (ex: fichier introuvable)
-    res.status(500).send('Internal Server Error');
-  }
+    // if the logged-in user is an admin, we return the complete list with all details
+    if (loggedInUser.role === EROLES.ADMIN) {
+      return res.status(200).json(usersDTO);
+    }
+    
+    // otherwise, we return only the summary list (without email and username) for security reasons
+    const shortUsers = [];
+    for (const user of usersDTO) {
+      // We only keep the id, firstName and lastName for non-admin users
+      shortUsers.push({
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName
+      });
+    }
+    
+    res.status(200).json(shortUsers);
+
 });
 
 /**
  * GET /users/username/:username
- * Récupère un utilisateur par son nom d'utilisateur
+ * Retrieves a user by their username (for authentication purposes, not for general use)
+ * Auth: Not required (This endpoint is used by the AuthService during login, so it cannot require authentication itself)
  */
 usersController.get('/username/:username', (req: Request, res: Response) => {
-  try {
     const username = req.params.username;
 
-    // 1. Guard : Vérification du paramètre
+    // 1. Guard : Vérification from the URL parameter (is it a non-empty string ?)
     if (!isString(username) || username.trim() === '') {
       return res.status(400).send('Bad Request: Invalid username');
     }
 
-    // 2. Appel au service
+    // 2. call the service to get the user by their username
     const user = UsersService.getByUsername(username);
 
-    // 3. Gestion de l'absence de donnée
+    // 3. manage the failure (user not found)
     if (!user) {
       return res.status(404).send('Not Found: User does not exist');
     }
 
     // 4. Happy Path
     res.status(200).json(user);
-  } catch (error) {
-    res.status(500).send('Internal Server Error');
-  }
+
 });
 
 /**
  * POST /users
- * Crée un nouvel utilisateur
+ * Create a new user
+ * Auth: Not required (This endpoint is used for registration, so it cannot require authentication)
  */
 usersController.post('/', (req: Request, res: Response) => {
-  try {
     const userData = req.body;
 
-    // 1. Guard : Vérification stricte du body avec ta fonction isNewUserDTO
+    // 1. Guard : Vérification strict from the body (are all required fields present and valid ?)
     if (!isNewUserDTO(userData)) {
       return res.status(400).send('Bad Request: Missing or invalid fields in body');
     }
 
-    // 2. Appel au service pour la création
+    // 2. call the service to create the user (the service will handle the hashing of the password and the assignment of a default role)
     const newUser = UsersService.create(userData);
 
-    // 3. Happy Path : Code 201 (Created) pour une création réussie
+    // 3. Happy Path : Code 201 (Created) for a successful creation, and we return the created user (without the password of course)
     res.status(201).json(newUser);
-  } catch (error) {
-    res.status(500).send('Internal Server Error');
-  }
+
 });
 
 /**
  * DELETE /users/:id
- * Désactive un utilisateur (Soft Delete)
+ * delete a user (soft delete by changing their status to INACTIVE)
  */
 usersController.delete('/:id', (req: Request, res: Response) => {
-  try {
-    // Les paramètres d'URL sont toujours des strings, il faut les convertir en nombre
-    // pour utiliser notre guard isNumber comme vu au cours
+ 
+    // url parameter is always a string, so we need to convert it to a number before using our guard isNumber as seen in class
     const id = Number(req.params.id);
 
-    // 1. Guard : L'ID est-il bien un nombre valide ?
+    // 1. Guard : is the ID valid ?
     if (!isNumber(id)) {
       return res.status(400).send('Bad Request: ID must be a number');
     }
 
-    // 2. Appel au service
+    // 2. call the service to delete the user (soft delete by changing their status to INACTIVE)
     const isDeleted = UsersService.softDelete(id);
 
-    // 3. Gestion de l'échec (Introuvable, déjà inactif, ou Admin)
+    // 3. manage the failure (user not found or already inactive)
     if (!isDeleted) {
       return res.status(404).send('Not Found: User not found or cannot be deleted');
     }
 
-    // 4. Happy Path : Code 204 (No Content) car la suppression a réussi mais on ne renvoie rien
+    // 4. Happy Path : Code 204 (No Content) because we don't return any content in the response body when a resource is successfully deleted
     res.status(204).send();
-  } catch (error) {
-    res.status(500).send('Internal Server Error');
-  }
+
 });
+
+/**
+ * GET  /users/:id
+ * get full users infos
+ */
+usersController.get('/:id', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
+ 
+    const loggedInUser = req.user;
+
+    if (!loggedInUser) {
+      return res.status(401).send("Unauthenticated user");
+    }
+    const id = Number(req.params.id);
+
+    if (!isNumber(id)) return res.status(400).send('Bad Request: Invalid ID');
+    
+    const targetUserDBO = UsersService.getById(id);
+
+    if (!targetUserDBO) return res.status(404).send('Not Found: User does not exist');
+    // if the logged-in user is an admin, we return all the details of the target user
+    if (loggedInUser.role === EROLES.ADMIN) {
+      return res.status(200).json(UsersMapper.toDTO(targetUserDBO));
+    } else if (loggedInUser.id === id) {
+      // if the logged-in user is requesting their own data, we return all the details of the target user
+      return res.status(200).json(UsersMapper.toFullDTO(targetUserDBO));
+    } else {
+      return res.status(403).send('Forbidden: You are not allowed to access the data of other users');
+    }
+  });
+
+  /**
+ * PUT /users/:id
+ * Update a profil from a user
+ */
+usersController.put('/:id', AuthService.authorize, (req: AuthenticatedRequest, res: Response) => {
+  
+    const loggedInUser = req.user;
+    const id = Number(req.params.id);
+    const bodyData = req.body;
+
+    
+    if (!loggedInUser) return res.status(401).send("Unauthorized");
+    if (!isNumber(id)) return res.status(400).send('Bad Request: Invalid ID');
+    
+    //  Guard : Is a user
+    if (!isUserDTO(bodyData)) {
+      return res.status(400).send('Bad Request: Invalid body data');
+    }
+    
+  
+    if (id !== bodyData.id) {
+      return res.status(400).send('Bad Request: Path ID and Body ID mismatch');
+    }
+
+    // auth: Only admin or refeere can see
+    if (loggedInUser.role !== EROLES.ADMIN && loggedInUser.id !== id) {
+      return res.status(403).send('Forbidden: Cannot update another user');
+    }
+
+    // call services 
+    const updatedUser = UsersService.update(id, bodyData);
+
+    if (!updatedUser) {
+      return res.status(404).send('Not Found: User not found or inactive');
+    }
+
+    return res.status(200).json(updatedUser);
+ 
+});
+  
+
+
+

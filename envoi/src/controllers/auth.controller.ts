@@ -1,7 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { isUserLoginDTO } from '../utils/guards';
 import { AuthService } from '../services/auth.service';
-import { LoggerService } from '../services/logger.service';
 
 export const authController = Router();
 
@@ -10,6 +9,7 @@ export const authController = Router();
  * Allows you to authenticate and obtain a token
  */
 authController.post('/login', (req: Request, res: Response) => {
+  try {
     const loginData = req.body;
 
     // 1. Guard : Is the data received complete ?
@@ -27,5 +27,7 @@ authController.post('/login', (req: Request, res: Response) => {
 
     // 4. Happy Path : Success ! Return the object with the token
     res.status(200).json(authResult);
-
+  } catch (error) {
+    res.status(500).send("Internal Server Error");
+  }
 });
