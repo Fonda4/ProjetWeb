@@ -54,24 +54,42 @@ usersController.get(
 usersController.post("/", (req: Request, res: Response) => {
   const userData = req.body;
 
-  // 1. Guard : Vérification strict from the body (are all required fields present and valid ?)
+  // Strict verification from the body (are all required fields present and valid ?)
   if (!isNewUserDTO(userData)) {
     return res
       .status(400)
       .send("Bad Request: Missing or invalid fields in body");
   }
 
-  // 2. call the service to create the user (the service will handle the hashing of the password and the assignment of a default role)
+  if (!UsersService.isValidEmail(userData.email)) {
+    // If the service returns 'false', we block the request and notify the client
+    return res
+      .status(400)
+      .send(
+        "Bad Request: The email must contain an '@', a '.' and be at least 5 characters long.",
+      );
+  }
+
+  const existingUser = UsersService.getByEmail(userData.email);
+
+  // If the service returns a user, it means the email is already taken
+  if (existingUser) {
+    // Block the request and return a 409 (Conflict) error
+    return res
+      .status(409)
+      .send("Conflict: A user with this email already exists.");
+  }
+
+  // Call the service to create the user (the service will handle the hashing of the password and the assignment of a default role)
   const newUser = UsersService.create(userData);
 
-  // 3. Happy Path : Code 201 (Created) for a successful creation, and we return the created user (without the password of course)
+  // Code 201 (Created) for a successful creation, and we return the created user (without the password of course)
   res.status(201).json(newUser);
 });
 
 /**
  * GET /users/username/:username
  * Retrieves a user by their username (for authentication purposes, not for general use)
- * Auth: Not required (This endpoint is used by the AuthService during login, so it cannot require authentication itself)
  */
 usersController.get("/username/:username", (req: Request, res: Response) => {
   const username = req.params.username;
@@ -96,27 +114,33 @@ usersController.get("/username/:username", (req: Request, res: Response) => {
 /**
  * GET /users/email/:email
  * Retrieves a user by their email (for authentication purposes, not for general use)
- * Auth: Not required (This endpoint is used by the AuthService during login, so it cannot require authentication itself)
  */
-usersController.get("/email/:email", (req: Request, res: Response) => {
-  const email = req.params.username;
+usersController.get(
+  "/email/:email",
+  AuthService.authorize,
+  (req: AuthenticatedRequest, res: Response) => {
+    if (req.user!.role !== EROLES.ADMIN && req.user!.role !== EROLES.REFEREE) {
+      return res.status(403).send("Forbidden: Admins or Referees only");
+    }
+    const email = req.params.email;
 
-  // 1. Guard : Vérification from the URL parameter (is it a non-empty string )
-  if (!isString(email) || email.trim() === "") {
-    return res.status(401).send("Bad Request: Invalid email");
-  }
+    // 1. Guard : Vérification from the URL parameter (is it a non-empty string )
+    if (!isString(email) || email.trim() === "") {
+      return res.status(401).send("Bad Request: Invalid email");
+    }
 
-  // 2. call the service to get the user by their username
-  const user = UsersService.getByEmail(email);
+    // 2. call the service to get the user by their username
+    const user = UsersService.getByEmail(email);
 
-  // 3. manage the failure (user not found)
-  if (!user) {
-    return res.status(404).send("Not Found: User does not exist");
-  }
+    // 3. manage the failure (user not found)
+    if (!user) {
+      return res.status(404).send("Not Found: User does not exist");
+    }
 
-  // 4. Happy Path
-  res.status(200).json(user);
-});
+    // 4. Happy Path
+    res.status(200).json(user);
+  },
+);
 
 /**
  * GET  /users/:id
@@ -183,6 +207,10 @@ usersController.delete(
         .send("Invalid ID or attempt to delete an admin account");
     }
 
+    if (loggedInUser.role !== EROLES.ADMIN && loggedInUser.id !== id) {
+      return res.status(403).send("Forbidden: Cannot delete another user");
+    }
+
     // 2. call the service to delete the user (soft delete by changing their status to INACTIVE)
     const isDeleted = UsersService.softDelete(id);
 
@@ -221,6 +249,19 @@ usersController.put(
 
     if (id !== bodyData.id) {
       return res.status(400).send("Bad Request: Path ID and Body ID mismatch");
+    }
+    if (!UsersService.isValidEmail(bodyData.email)) {
+      return res.status(400).send("Bad Request: Invalid email format");
+    }
+
+    const existingUser = UsersService.getByEmail(bodyData.email);
+
+    // If the service returns a user, it means the email is already taken
+    if (existingUser) {
+      // Block the request and return a 409 (Conflict) error
+      return res
+        .status(409)
+        .send("Conflict: A user with this email already exists.");
     }
 
     // auth: Only admin or refeere can see
@@ -296,8 +337,8 @@ usersController.patch(
 
     if (!isNumber(id)) return res.status(400).send("Bad Request: Invalid ID");
     if (!loggedInUser) return res.status(401).send("Missing or Invalid token");
-    if (loggedInUser.role == EROLES.ADMIN)
-      return res.status(403).send("Unauthorized User");
+    if (loggedInUser.role !== EROLES.ADMIN)
+      return res.status(403).send("Forbidden: Admin only");
 
     const isReactivated = UsersService.reactivate(id);
     if (!isReactivated) {

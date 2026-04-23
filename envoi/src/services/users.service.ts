@@ -242,4 +242,23 @@ export class UsersService {
   }
 
 
+  static isValidEmail(email: string): boolean {
+    // 1. Ensure the email exists (additional security)
+    if (!email) {
+      return false;
+    }
+
+    // 2. Verify the presence of the at sign
+    const hasAtSign = email.includes('@');
+
+    // 3. Verify the presence of the dot
+    const hasDot = email.includes('.');
+
+    // 4. Verify minimum length
+    const isLongEnough = email.length >= 5;
+
+    // 5. The email is valid only if ALL these conditions are true 
+    return hasAtSign && hasDot && isLongEnough;
+  }
+
 }
