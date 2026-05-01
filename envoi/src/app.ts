@@ -2,8 +2,8 @@ import express, { type Express } from 'express';
 import { authController } from './controllers/auth.controller';
 import { usersController } from './controllers/users.controller';
 import { teamsController } from './controllers/teams.controller';
+import { gamesController } from './controllers/games.controller';
 // import { fieldsController } from './controllers/fields.controller';
-// import { gamesController } from './controllers/games.controller';
 
 export const app : Express = express();
 
@@ -29,8 +29,9 @@ app.use((req, res, next) => {
 app.use('/auth', authController);
 app.use('/users', usersController);
 app.use('/teams', teamsController);
+app.use('/games', gamesController);
 // app.use('/fields', fieldsController);
-// app.use('/games', gamesController);
+
 
 // Test route to check if the server is running
 app.get('/', (req, res) => {
