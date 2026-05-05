@@ -3,6 +3,7 @@ import { NewUserDTO, UserDTO, UserDBO, EROLES, EUserStatus } from "../models/use
 import { FilesService } from "./files.service";
 import { LoggerService } from "./logger.service";
 import { UserLoginDTO } from "../models/auth.model";
+
 import bcrypt from "bcrypt";
 
 export class UsersService {
@@ -57,16 +58,18 @@ export class UsersService {
   }
 
   //  GET BY USERNAME 
-  static getByUsername(username: string): UserDTO | undefined {
-    const dbos = this.readUsersDB();
+static getByUsername(username: string): UserDTO | undefined {
+    const usersDB: UserDBO[] = this.readUsersDB();
     
-    for(const dbo of dbos) {
-      if(dbo.username === username && dbo.status === EUserStatus.ACTIVE) {
-        return UsersMapper.toDTO(dbo);
-      }
+    for (const user of usersDB) {
+        // We strictly check the username AND if the user status is active
+        if (user.username === username && user.status === EUserStatus.ACTIVE) {
+            return UsersMapper.toDTO(user);
+        }
     }
+    // If no active user is found, we return undefined
     return undefined;
-  }
+}
 
   // CREATE 
   static create(newUser: NewUserDTO): UserDTO {

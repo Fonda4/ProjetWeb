@@ -3,7 +3,7 @@ import { authController } from './controllers/auth.controller';
 import { usersController } from './controllers/users.controller';
 import { teamsController } from './controllers/teams.controller';
 import { gamesController } from './controllers/games.controller';
-// import { fieldsController } from './controllers/fields.controller';
+import { fieldsController } from './controllers/fields.controller';
 
 export const app : Express = express();
 
@@ -30,7 +30,7 @@ app.use('/auth', authController);
 app.use('/users', usersController);
 app.use('/teams', teamsController);
 app.use('/games', gamesController);
-// app.use('/fields', fieldsController);
+ app.use('/fields', fieldsController);
 
 
 // Test route to check if the server is running

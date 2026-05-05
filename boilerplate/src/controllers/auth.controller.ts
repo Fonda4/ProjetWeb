@@ -2,14 +2,14 @@ import { Router } from "express";
 import { isUserLoginDTO } from "../utils/guards";
 import { AuthService } from "../services/auth.service";
 import { LoggerService } from "../services/logger.service";
-
+import { Request, Response } from "express";
 export const authController = Router();
 
 /**
  * POST /auth/login
  * Allows you to authenticate and obtain a token
  */
-authController.post("/login", (req, res) => {
+authController.post('/login', (req : Request, res : Response) => {
   LoggerService.info("[AuthController] POST /login called");
   const loginData = req.body;
 

@@ -62,30 +62,39 @@ export class GamesService {
     return dbo ? GamesMapper.toDTO(dbo) : undefined;
   }
 
-  static create(newGame: NewGameDTO, refereeId: number): GameDTO {
+static create(newGame: NewGameDTO, refereeId: number): GameDTO | null {
     const dbos = this.readGamesDB();
+
+    // Business Rule: Check if the field is already booked
+    if (newGame.fieldId && newGame.scheduledDate) {
+      if (this.isFieldBooked(dbos, newGame.fieldId, newGame.scheduledDate)) {
+        return null; // 400 Bad Request
+      }
+    }
+
     const newId = this.getNewID(dbos);
-    
     const newDbo = GamesMapper.toDBO(newGame, newId, refereeId);
+    
     dbos.push(newDbo);
     this.writeGamesDB(dbos);
     
     return GamesMapper.toDTO(newDbo);
   }
 
-  static update(id: number, gameData: GameDTO): GameDTO | undefined | null {
+static update(id: number, gameData: GameDTO): GameDTO | undefined | null {
     const dbos = this.readGamesDB();
     const index = dbos.findIndex(g => g.id === id);
+
     if (index === -1) return undefined; // 404
 
     const currentGame = dbos[index];
 
-    // Règles métier (Swagger) : Bloqué si finished ou cancelled
+    // Business rules (Swagger) : Blocked if finished or cancelled
     if (currentGame.status === EGameStatus.FINISHED || currentGame.status === EGameStatus.CANCELLED) {
       return null; // 400 Bad Request
     }
 
-    // Règles métier : Si STARTED, certains champs sont bloqués
+    // Business rules : If STARTED, some fields are locked
     if (currentGame.status === EGameStatus.STARTED) {
       if (gameData.fieldId !== currentGame.field_id || 
           gameData.refereeId !== currentGame.referee_id ||
@@ -95,7 +104,15 @@ export class GamesService {
       }
     }
 
-    // Mise à jour (le status ne change pas par cette route normalement, mais on met à jour les champs)
+    // NEW Business Rule: Check if the updated field/date is already booked
+    if (gameData.fieldId && gameData.scheduledDate) {
+      if (this.isFieldBooked(dbos, gameData.fieldId, gameData.scheduledDate, id)) {
+        return null; // 400 Bad Request
+      }
+    }
+
+    // Update fields
+
     dbos[index].name = gameData.name;
     dbos[index].field_id = gameData.fieldId || null;
     dbos[index].referee_id = gameData.refereeId || null;
@@ -119,52 +136,77 @@ export class GamesService {
     return true; // 204
   }
 
+
   // PATCH /games/:id/score/:home/:away
   static setScore(id: number, homeScore: number, awayScore: number): GameDTO | undefined | null {
     const dbos = this.readGamesDB();
     const index = dbos.findIndex(g => g.id === id);
-    if (index === -1) return undefined; // 404
+    if (index === -1) return undefined; // 404 Not Found
 
-    // Règle: Seulement si le match est commencé
+    // Business Rule: We can only update the score if the game status is STARTED
     if (dbos[index].status !== EGameStatus.STARTED) {
-      return null; // 400
+      return null; // 400 Bad Request
     }
 
+    // Apply the new scores
     dbos[index].home_score = homeScore;
     dbos[index].away_score = awayScore;
     dbos[index].updated_at = new Date();
-
+    
     this.writeGamesDB(dbos);
+
     return GamesMapper.toDTO(dbos[index]);
   }
 
   // PATCH /games/:id/status/:status
   static setStatus(id: number, newStatus: EGameStatus): GameDTO | undefined | null {
-    const dbos = this.readGamesDB();
+    const dbos = this.readGamesDB(); // Reads the JSON file
     const index = dbos.findIndex(g => g.id === id);
-    if (index === -1) return undefined; // 404
+    if (index === -1) return undefined; // Returns undefined to trigger a 404 Not Found in the controller
 
     const currentStatus = dbos[index].status;
     let isValidTransition = false;
 
-    // Vérification stricte des transitions selon le Swagger
+    // Strict verification of status transitions according to our business rules
     if (currentStatus === EGameStatus.CREATED && newStatus === EGameStatus.CANCELLED) isValidTransition = true;
     if (currentStatus === EGameStatus.SCHEDULED && newStatus === EGameStatus.CANCELLED) isValidTransition = true;
-    if (currentStatus === EGameStatus.STARTED && newStatus === EGameStatus.FINISHED) isValidTransition = true;
+    if (currentStatus === EGameStatus.STARTED && newStatus === EGameStatus.FINISHED) isValidTransition = true; // Step 4 (Finish)
     
-    if (currentStatus === EGameStatus.SCHEDULED && newStatus === EGameStatus.STARTED) {
-      // Règle: pour démarrer, tous les champs requis doivent être là
+    if (currentStatus === EGameStatus.SCHEDULED && newStatus === EGameStatus.STARTED) { // Step 2 (Start)
+      // Business Rule: To start a game, all required fields must be fully populated
       if (dbos[index].field_id && dbos[index].referee_id && dbos[index].home_team_id && dbos[index].away_team_id) {
         isValidTransition = true;
       }
     }
 
-    if (!isValidTransition) return null; // 400
+    if (!isValidTransition) return null; // Returns null to trigger a 400 Bad Request in the controller
 
+    // Apply the status change and update the timestamp
     dbos[index].status = newStatus;
     dbos[index].updated_at = new Date();
+    this.writeGamesDB(dbos); // Saves to the JSON file
 
-    this.writeGamesDB(dbos);
     return GamesMapper.toDTO(dbos[index]);
+  }
+
+
+  /**
+   * Checks if a field is already booked at a specific date and time
+   */
+  private static isFieldBooked(dbos: GameDBO[], fieldId: number, scheduledDate: string, excludeGameId?: number): boolean {
+    for (const game of dbos) {
+      // Check if the field and date match exactly
+      if (game.field_id === fieldId && game.scheduled_date === scheduledDate) {
+        // If we are updating a game, we must not compare it against itself
+        if (excludeGameId && game.id === excludeGameId) {
+          continue;
+        }
+        // A cancelled game does not occupy the field
+        if (game.status !== EGameStatus.CANCELLED) {
+          return true; // Field is booked
+        }
+      }
+    }
+    return false; // Field is available
   }
 }

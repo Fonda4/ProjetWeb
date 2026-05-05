@@ -34,11 +34,11 @@ export class GamesMapper {
     };
   }
 
-  // NewDTO -> DBO (Lors de la création)
+  // NewDTO -> DBO (When creating)
   static toDBO(dto: NewGameDTO, newId: number, autoRefereeId: number): GameDBO {
     const now = new Date();
     
-    // Règle du swagger : si fieldId et scheduledDate sont présents, le statut est 'scheduled', sinon 'created'
+    // Business Rule: If fieldId and scheduledDate are present, the status is 'scheduled', otherwise 'created'
     let initialStatus = EGameStatus.CREATED;
     if (dto.fieldId && dto.scheduledDate) {
       initialStatus = EGameStatus.SCHEDULED;
@@ -49,7 +49,7 @@ export class GamesMapper {
       status: initialStatus,
       name: dto.name,
       field_id: dto.fieldId || null,
-      referee_id: dto.refereeId || autoRefereeId, // Si l'arbitre n'est pas fourni, on met celui qui crée
+      referee_id: dto.refereeId || autoRefereeId, // Default to the creator if no referee is provided
       home_team_id: dto.homeTeamId,
       away_team_id: dto.awayTeamId,
       home_score: null,
