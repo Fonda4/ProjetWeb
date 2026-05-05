@@ -104,15 +104,7 @@ static update(id: number, gameData: GameDTO): GameDTO | undefined | null {
       }
     }
 
-    // NEW Business Rule: Check if the updated field/date is already booked
-    if (gameData.fieldId && gameData.scheduledDate) {
-      if (this.isFieldBooked(dbos, gameData.fieldId, gameData.scheduledDate, id)) {
-        return null; // 400 Bad Request
-      }
-    }
-
     // Update fields
-
     dbos[index].name = gameData.name;
     dbos[index].field_id = gameData.fieldId || null;
     dbos[index].referee_id = gameData.refereeId || null;
@@ -120,6 +112,16 @@ static update(id: number, gameData: GameDTO): GameDTO | undefined | null {
     dbos[index].away_team_id = gameData.awayTeamId;
     dbos[index].scheduled_date = gameData.scheduledDate || null;
     dbos[index].updated_at = new Date();
+
+    // NEW: Auto-assign status based on field and date presence
+    // We only evaluate this if the game is in CREATED or SCHEDULED status
+    if (currentGame.status === EGameStatus.CREATED || currentGame.status === EGameStatus.SCHEDULED) {
+      if (gameData.fieldId && gameData.scheduledDate) {
+        dbos[index].status = EGameStatus.SCHEDULED; // All prerequisites are met
+      } else {
+        dbos[index].status = EGameStatus.CREATED; // Missing prerequisites
+      }
+    }
 
     this.writeGamesDB(dbos);
     return GamesMapper.toDTO(dbos[index]);
