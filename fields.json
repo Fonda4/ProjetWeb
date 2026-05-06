@@ -1,0 +1,200 @@
+"/fields": {
+            "get": {
+                "tags": [
+                    "Fields"
+                ],
+                "summary": "List all fields (no auth required)",
+                "description": "No authentication required. Returns all fields in the system as a `FieldDTO` array.\n",
+                "responses": {
+                    "200": {
+                        "description": "List of fields",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/FieldDTO"
+                                    }
+                                },
+                                "example": [
+                                    {
+                                        "id": 1,
+                                        "name": "Main Stadium",
+                                        "location": "123 Sports Avenue, Paris",
+                                        "createdAt": "2024-01-01T00:00:00.000Z",
+                                        "updatedAt": "2024-01-01T00:00:00.000Z"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Fields"
+                ],
+                "summary": "Create a new field (admin only)",
+                "description": "Requires `admin` role. Creates a new field. Both `name` and `location` are required.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NewFieldDTO"
+                            },
+                            "example": {
+                                "name": "Main Stadium",
+                                "location": "123 Sports Avenue, Paris"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Field created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FieldDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Name or location is missing or invalid"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not an admin"
+                    }
+                }
+            }
+        },
+        "/fields/{id}": {
+            "get": {
+                "tags": [
+                    "Fields"
+                ],
+                "summary": "Get a field by ID (no auth required)",
+                "description": "No authentication required. Returns the full representation of a single field (`FieldDTO`).\n",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Field details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FieldDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID"
+                    },
+                    "404": {
+                        "description": "Field not found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Fields"
+                ],
+                "summary": "Update a field (admin only)",
+                "description": "Requires `admin` role. Replaces the field's `name` and `location` with the provided values.\nBody must include `id` matching the URL parameter; if body `id` and path `{id}` differ,\nreturns 400.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FieldDTO"
+                            },
+                            "example": {
+                                "id": 1,
+                                "name": "Renovated Stadium",
+                                "location": "456 New Street, Lyon"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated field",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FieldDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid payload (including invalid body shape and body/path ID mismatch)"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not an admin"
+                    },
+                    "404": {
+                        "description": "Field not found"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Fields"
+                ],
+                "summary": "\\\"?? NOT TO BE IMPLEMENTED — Delete a field (admin only, for reference only)\\\"",
+                "description": "> **Note for students:** This endpoint is described here for API design completeness only.\n> It is **not required** and **will not be graded**. Do not implement it.\n> In the current implementation, this route is not registered and requests return `404`.\n\nRequires `admin` role. Permanently removes the field from the data store.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Field deleted (no content)"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not an admin"
+                    },
+                    "404": {
+                        "description": "Field not found"
+                    }
+                }
+            }
+        }
+    },

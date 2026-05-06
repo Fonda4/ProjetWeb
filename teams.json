@@ -1,0 +1,318 @@
+"/teams": {
+            "get": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "List all teams (no auth required)",
+                "description": "No authentication required. Returns a short view of all teams (`TeamShortDTO`):\nid, name, and sportType only. Does not include player lists or trainer details.\n",
+                "responses": {
+                    "200": {
+                        "description": "List of teams",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/TeamShortDTO"
+                                    }
+                                },
+                                "example": [
+                                    {
+                                        "id": 1,
+                                        "name": "Red Dragons",
+                                        "sportType": "football"
+                                    },
+                                    {
+                                        "id": 2,
+                                        "name": "Blue Eagles",
+                                        "sportType": "football"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Create a new team (trainer only)",
+                "description": "Requires `trainer` role. Creates a new team. The authenticated trainer is automatically\nset as the team's `trainerId` — the `trainerId` field in the body is ignored.\nThe new team is initialized with an empty player list.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NewTeamDTO"
+                            },
+                            "example": {
+                                "name": "Red Dragons",
+                                "description": "A competitive football team",
+                                "sportType": "football"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Team created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TeamDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or missing fields"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not a trainer"
+                    }
+                }
+            }
+        },
+        "/teams/own": {
+            "get": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Get the teams the authenticated user belongs to (any authenticated user)",
+                "description": "Any authenticated user can call this endpoint. Returns the full representation of all\nteams the authenticated user is listed as a player of, or trainer for (`TeamFullDTO`), with player and\ntrainer objects resolved. Returns an empty array if the user is not in any team.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of teams with resolved players and trainer",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/TeamFullDTO"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    }
+                }
+            }
+        },
+        "/teams/{id}": {
+            "get": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Get a team by ID (no auth required)",
+                "description": "No authentication required. Returns the standard representation of a single team (`TeamDTO`)\nwith raw player IDs and trainerId. Returns 400 if `{id}` is not a valid number,\n404 if no team with that ID exists.\n",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Team details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TeamDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid team ID"
+                    },
+                    "404": {
+                        "description": "Team not found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Update a team (trainer only)",
+                "description": "Requires `trainer` role. Replaces the team's fields with the provided values.\nBody must include `id` matching the URL parameter; if body `id` and path `{id}` differ,\nreturns 400. Body must also include `players` (array of IDs)\nand `trainerId`.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TeamDTO"
+                            },
+                            "example": {
+                                "id": 1,
+                                "name": "Red Dragons FC",
+                                "description": "Updated description",
+                                "sportType": "football",
+                                "players": [
+                                    2,
+                                    3
+                                ],
+                                "trainerId": 5
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated team",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TeamDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid payload or ID mismatch"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not a trainer"
+                    },
+                    "404": {
+                        "description": "Team not found"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "\\\"?? NOT TO BE IMPLEMENTED — Delete a team (admin only, for reference only)\\\"",
+                "description": "> **Note for students:** This endpoint is described here for API design completeness only.\n> It is **not required** and **will not be graded**. Do not implement it.\n> In the current implementation, this route is not registered and requests return `404`.\n\nRequires `admin` role. Permanently removes the team from the data store.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Team deleted (no content)"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not an admin"
+                    },
+                    "404": {
+                        "description": "Team not found"
+                    }
+                }
+            }
+        },
+        "/teams/{id}/join": {
+            "patch": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Join a team (any authenticated user)",
+                "description": "Any authenticated user can call this endpoint. Adds the authenticated user to the team's\nplayer list. The user ID is taken from the auth token — no body is required.\nReturns 400 if the user is already a member.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User successfully joined the team",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TeamDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "User is already in the team"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "404": {
+                        "description": "Team not found"
+                    }
+                }
+            }
+        },
+        "/teams/{id}/leave": {
+            "patch": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Leave a team (any authenticated user)",
+                "description": "Any authenticated user can call this endpoint. Removes the authenticated user from the\nteam's player list. The user ID is taken from the auth token — no body is required.\nReturns 404 if the team does not exist or the user is not a member.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated team after user left",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TeamDTO"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "404": {
+                        "description": "Team not found or user not in team"
+                    }
+                }
+            }
+        },

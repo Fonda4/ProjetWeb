@@ -1,26 +1,25 @@
-// src/models/games.model.ts
 import { BasicModelDBO, BasicModelDTO } from "./basic.model";
 
-// 1. Énumération des statuts possibles d'un match selon le Swagger
+// 1. List of possible match statuses according to the Swagger
 export enum EGameStatus {
-  CREATED = 'created',
-  SCHEDULED = 'scheduled',
-  STARTED = 'started',
-  FINISHED = 'finished',
-  CANCELLED = 'cancelled'
+  CREATED = "created",
+  SCHEDULED = "scheduled",
+  STARTED = "started",
+  FINISHED = "finished",
+  CANCELLED = "cancelled",
 }
 
-// 2. Ce que le client envoie pour CRÉER un match
+// 2. What the customer sends to CREATE a match
 export interface NewGameDTO {
   name?: string;
   fieldId?: number;
   refereeId?: number;
   homeTeamId?: number;
   awayTeamId?: number;
-  scheduledDate?: string; // Format Date ISO
+  scheduledDate?: string; // Date of ISO
 }
 
-// 3. Version courte pour la liste (GET /games)
+// 3. Short version for the list (GET/games)
 export interface GameShortDTO {
   id: number;
   status: EGameStatus;
@@ -31,7 +30,7 @@ export interface GameShortDTO {
   scheduledDate?: string | null;
 }
 
-// 4. Version complète pour les détails
+// 4. Full version for details
 export interface GameDTO extends BasicModelDTO {
   id: number;
   status: EGameStatus;
@@ -45,7 +44,7 @@ export interface GameDTO extends BasicModelDTO {
   scheduledDate?: string | null;
 }
 
-// 5. Version Base de Données (snake_case)
+// 5. The database version (snake_case)
 export interface GameDBO extends BasicModelDBO {
   id: number;
   status: EGameStatus;

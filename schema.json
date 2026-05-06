@@ -1,0 +1,801 @@
+ "schemas": {
+            "ErrorResponse": {
+                "type": "object",
+                "description": "Canonical JSON error shape. Note: current implementation is mixed and may also return plain\ntext or an empty body on some routes/statuses.\n",
+                "required": [
+                    "error"
+                ],
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "example": "Invalid request body"
+                    }
+                }
+            },
+            "UserLoginDTO": {
+                "type": "object",
+                "description": "Credentials used to authenticate a user",
+                "required": [
+                    "username",
+                    "password"
+                ],
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "example": "admin"
+                    },
+                    "password": {
+                        "type": "string",
+                        "example": "AdminPass123!"
+                    }
+                }
+            },
+            "AuthenticatedUserDTO": {
+                "type": "object",
+                "description": "Successful login response containing the auth token and user role",
+                "required": [
+                    "username",
+                    "token",
+                    "role"
+                ],
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "example": "admin"
+                    },
+                    "token": {
+                        "type": "string",
+                        "description": "Base64-encoded username. Pass as the Authorization header value.",
+                        "example": "YWRtaW4="
+                    },
+                    "role": {
+                        "$ref": "#/components/schemas/ERole"
+                    }
+                }
+            },
+            "EUserStatus": {
+                "type": "string",
+                "enum": [
+                    "active",
+                    "inactive"
+                ],
+                "description": "User account status:\n- `active` — account is active (default)\n- `inactive` — account has been soft-deleted\n"
+            },
+            "ERole": {
+                "type": "string",
+                "enum": [
+                    "admin",
+                    "player",
+                    "referee",
+                    "trainer"
+                ],
+                "description": "User role:\n- `admin` — full administrative access\n- `player` — default role for regular users\n- `referee` — assigned to officiate games\n- `trainer` — assigned to coach a team\n"
+            },
+            "UserShortDTO": {
+                "type": "object",
+                "description": "Minimal user representation. Returned by GET /users and GET /users/:id for non-admin callers.",
+                "required": [
+                    "id",
+                    "firstName",
+                    "lastName"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "firstName": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "lastName": {
+                        "type": "string",
+                        "example": "Doe"
+                    }
+                }
+            },
+            "UserFullDTO": {
+                "type": "object",
+                "description": "Full user profile with timestamps. Not currently used by any endpoint in the reverted code,\nbut kept for documentation purposes.\n",
+                "required": [
+                    "id",
+                    "firstName",
+                    "lastName",
+                    "email",
+                    "username",
+                    "role",
+                    "status",
+                    "createdAt",
+                    "updatedAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "firstName": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "lastName": {
+                        "type": "string",
+                        "example": "Doe"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "john@example.com"
+                    },
+                    "username": {
+                        "type": "string",
+                        "example": "johndoe"
+                    },
+                    "role": {
+                        "$ref": "#/components/schemas/ERole"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/EUserStatus"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-15T10:30:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-06-01T08:00:00.000Z"
+                    }
+                }
+            },
+            "UserDTO": {
+                "type": "object",
+                "description": "**Outbound** user representation — never contains a password in responses.\nReturned by: GET /users (admin callers), POST /users,\nPUT /users/:id, GET /users/username/:username, GET /users/email/:email,\nPATCH /users/:id/role/:role.\n",
+                "required": [
+                    "id",
+                    "firstName",
+                    "lastName",
+                    "email",
+                    "username",
+                    "role",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "firstName": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "lastName": {
+                        "type": "string",
+                        "example": "Doe"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "john@example.com"
+                    },
+                    "username": {
+                        "type": "string",
+                        "example": "johndoe"
+                    },
+                    "password": {
+                        "type": "string",
+                        "description": "Optional — only present in inbound PUT /users/:id body; never returned in outbound responses"
+                    },
+                    "role": {
+                        "$ref": "#/components/schemas/ERole"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/EUserStatus"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    }
+                }
+            },
+            "NewUserDTO": {
+                "type": "object",
+                "description": "Payload for creating a user (POST /users). Role is always forced to `player`.",
+                "required": [
+                    "firstName",
+                    "lastName",
+                    "email",
+                    "username",
+                    "password"
+                ],
+                "properties": {
+                    "firstName": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "lastName": {
+                        "type": "string",
+                        "example": "Doe"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "john@example.com"
+                    },
+                    "username": {
+                        "type": "string",
+                        "example": "johndoe"
+                    },
+                    "password": {
+                        "type": "string",
+                        "description": "Plaintext password — stored hashed server-side",
+                        "example": "SecurePass123!"
+                    }
+                }
+            },
+            "UserDBO": {
+                "type": "object",
+                "description": "**Database object** — shape stored in `data/users.json` (snake_case).\nUsed internally; never returned directly by the API.\n",
+                "required": [
+                    "id",
+                    "email",
+                    "first_name",
+                    "last_name",
+                    "username",
+                    "password",
+                    "role",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "john@example.com"
+                    },
+                    "first_name": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "example": "Doe"
+                    },
+                    "username": {
+                        "type": "string",
+                        "example": "johndoe"
+                    },
+                    "password": {
+                        "type": "string",
+                        "description": "bcrypt hash",
+                        "example": "$2b$10$..."
+                    },
+                    "role": {
+                        "$ref": "#/components/schemas/ERole"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/EUserStatus"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    }
+                }
+            },
+            "ESportType": {
+                "type": "string",
+                "enum": [
+                    "football",
+                    "basketball",
+                    "tennis",
+                    "volleyball",
+                    "handball"
+                ]
+            },
+            "TeamShortDTO": {
+                "type": "object",
+                "description": "Minimal team representation returned by GET /teams",
+                "required": [
+                    "id",
+                    "name",
+                    "sportType"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Red Dragons"
+                    },
+                    "sportType": {
+                        "$ref": "#/components/schemas/ESportType"
+                    }
+                }
+            },
+            "TeamDTO": {
+                "type": "object",
+                "description": "Standard team representation with raw player IDs and trainerId.\nReturned by GET /teams/:id, POST /teams, PUT /teams/:id, PATCH /teams/:id/join, PATCH /teams/:id/leave.\n",
+                "required": [
+                    "id",
+                    "name",
+                    "sportType",
+                    "players",
+                    "trainerId",
+                    "createdAt",
+                    "updatedAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Red Dragons"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "A competitive football team"
+                    },
+                    "sportType": {
+                        "$ref": "#/components/schemas/ESportType"
+                    },
+                    "players": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "description": "Raw player IDs",
+                        "example": [
+                            2,
+                            3
+                        ]
+                    },
+                    "trainerId": {
+                        "type": "integer",
+                        "description": "Raw trainer ID",
+                        "example": 5
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    }
+                }
+            },
+            "TeamFullDTO": {
+                "type": "object",
+                "description": "Full team representation with **resolved** player and trainer objects.\nReturned only by GET /teams/own.\n",
+                "required": [
+                    "id",
+                    "name",
+                    "sportType",
+                    "players",
+                    "trainer",
+                    "createdAt",
+                    "updatedAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Red Dragons"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "A competitive football team"
+                    },
+                    "sportType": {
+                        "$ref": "#/components/schemas/ESportType"
+                    },
+                    "players": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/UserShortDTO"
+                        },
+                        "description": "Resolved player objects",
+                        "example": [
+                            {
+                                "id": 2,
+                                "firstName": "John",
+                                "lastName": "Doe"
+                            }
+                        ]
+                    },
+                    "trainer": {
+                        "$ref": "#/components/schemas/UserShortDTO",
+                        "description": "Resolved trainer object",
+                        "example": {
+                            "id": 5,
+                            "firstName": "Trainer",
+                            "lastName": "One"
+                        }
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    }
+                }
+            },
+            "NewTeamDTO": {
+                "type": "object",
+                "description": "Payload for creating a team (POST /teams)",
+                "required": [
+                    "name",
+                    "sportType"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Red Dragons"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Optional — defaults to empty string",
+                        "example": "A competitive football team"
+                    },
+                    "sportType": {
+                        "$ref": "#/components/schemas/ESportType"
+                    }
+                }
+            },
+            "TeamDBO": {
+                "type": "object",
+                "description": "**Database object** — shape stored in `data/teams.json` (snake_case).\nUsed internally; never returned directly by the API.\n",
+                "required": [
+                    "id",
+                    "name",
+                    "sport_type",
+                    "players",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "sport_type": {
+                        "$ref": "#/components/schemas/ESportType"
+                    },
+                    "players": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    },
+                    "trainer_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "EGameStatus": {
+                "type": "string",
+                "enum": [
+                    "created",
+                    "scheduled",
+                    "started",
+                    "finished",
+                    "cancelled"
+                ],
+                "description": "Lifecycle status of a game (all lowercase):\n- `created` — initial state, no field or date assigned\n- `scheduled` — field and date are set (auto-assigned on create/update)\n- `started` — game is in progress\n- `finished` — game has ended\n- `cancelled` — game was cancelled\n\n**Allowed transitions:**\n- `created` ? `cancelled`\n- `scheduled` ? `started` | `cancelled`\n- `started` ? `finished`\n"
+            },
+            "GameShortDTO": {
+                "type": "object",
+                "description": "Minimal game representation returned by `GET /games`.\nOnly includes fields useful for listing; no scores, no timestamps.\n",
+                "required": [
+                    "id",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/EGameStatus"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Red Dragons vs Blue Eagles"
+                    },
+                    "fieldId": {
+                        "type": "integer",
+                        "nullable": true,
+                        "example": null
+                    },
+                    "homeTeamId": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "awayTeamId": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "scheduledDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "example": "2099-01-01T00:00:00.000Z"
+                    }
+                }
+            },
+            "GameDTO": {
+                "type": "object",
+                "description": "Full game representation returned by most game endpoints.",
+                "required": [
+                    "id",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/EGameStatus"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Red Dragons vs Blue Eagles"
+                    },
+                    "fieldId": {
+                        "type": "integer",
+                        "nullable": true,
+                        "example": 1
+                    },
+                    "refereeId": {
+                        "type": "integer",
+                        "nullable": true,
+                        "example": 4
+                    },
+                    "homeTeamId": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "awayTeamId": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "homeScore": {
+                        "type": "integer",
+                        "nullable": true,
+                        "example": 0
+                    },
+                    "awayScore": {
+                        "type": "integer",
+                        "nullable": true,
+                        "example": 0
+                    },
+                    "scheduledDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "example": "2099-01-01T00:00:00.000Z"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    }
+                }
+            },
+            "NewGameDTO": {
+                "type": "object",
+                "description": "Payload for creating a game (POST /games). All fields are optional.",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Red Dragons vs Blue Eagles"
+                    },
+                    "fieldId": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "refereeId": {
+                        "type": "integer",
+                        "example": 4
+                    },
+                    "homeTeamId": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "awayTeamId": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "scheduledDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2099-01-01T00:00:00.000Z"
+                    }
+                }
+            },
+            "NewFieldDTO": {
+                "type": "object",
+                "description": "Payload for creating a field (POST /fields).",
+                "required": [
+                    "name",
+                    "location"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Main Stadium"
+                    },
+                    "location": {
+                        "type": "string",
+                        "example": "123 Sports Avenue, Paris"
+                    }
+                }
+            },
+            "GameDBO": {
+                "type": "object",
+                "description": "**Database object** — shape stored in `data/games.json` (snake_case).\nUsed internally; never returned directly by the API.\n",
+                "required": [
+                    "id",
+                    "status",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/EGameStatus"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "field_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "referee_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "home_team_id": {
+                        "type": "integer"
+                    },
+                    "away_team_id": {
+                        "type": "integer"
+                    },
+                    "home_score": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "away_score": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "scheduled_date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "FieldDTO": {
+                "type": "object",
+                "description": "Field representation returned by field endpoints.",
+                "required": [
+                    "id",
+                    "name",
+                    "location"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Main Stadium"
+                    },
+                    "location": {
+                        "type": "string",
+                        "example": "123 Sports Avenue, Paris"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                    }
+                }
+            },
+            "FieldDBO": {
+                "type": "object",
+                "description": "**Database object** — shape stored in `data/fields.json` (snake_case).\nUsed internally; never returned directly by the API.\n",
+                "required": [
+                    "id",
+                    "name",
+                    "location",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "location": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            }
+        }
+    }

@@ -2,25 +2,23 @@ import { BasicModelDBO, BasicModelDTO } from "./basic.model";
 
 // different roles of users in our system
 export enum EROLES {
-  ADMIN = 'admin',
-  PLAYER = 'player',
-  REFEREE = 'referee',
-  TRAINER = 'trainer'
+  ADMIN = "admin",
+  PLAYER = "player",
+  REFEREE = "referee",
+  TRAINER = "trainer",
 }
-
-
 
 // status of a user (active or inactive)
 export enum EUserStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive'
+  ACTIVE = "active",
+  INACTIVE = "inactive",
 }
 
 // 1. Creation DTO: What the client sends on a POST /users
 // Note: There is no ID or creation dates here, as the server handles them!
 export interface NewUserDTO {
   firstName: string;
-  lastName: string;    
+  lastName: string;
   email: string;
   username: string;
   password: string;

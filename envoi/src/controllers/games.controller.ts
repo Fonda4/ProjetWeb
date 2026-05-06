@@ -172,7 +172,7 @@ gamesController.delete(
       LoggerService.error(
         `[GamesController] Delete failed: Game ${id} not found`,
       );
-      return res.status(404).send("Not Found");
+      return res.status(500).send("Not Found");
     }
 
     // Happy Path: Success (204 No Content)

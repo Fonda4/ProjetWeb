@@ -1,9 +1,13 @@
-// src/mappers/games.mapper.ts
-import { GameDBO, GameDTO, GameShortDTO, NewGameDTO, EGameStatus } from '../models/games.model';
+import {
+  GameDBO,
+  GameDTO,
+  GameShortDTO,
+  NewGameDTO,
+  EGameStatus,
+} from "../models/games.model";
 
 export class GamesMapper {
-  
-  // DBO -> DTO complet
+  // DBO -> DTO full
   static toDTO(dbo: GameDBO): GameDTO {
     return {
       id: dbo.id,
@@ -17,11 +21,11 @@ export class GamesMapper {
       awayScore: dbo.away_score,
       scheduledDate: dbo.scheduled_date,
       createdAt: dbo.created_at,
-      updatedAt: dbo.updated_at
+      updatedAt: dbo.updated_at,
     };
   }
 
-  // DBO -> DTO court (pour les listes)
+  // DBO -> DTO short (for lists)
   static toShortDTO(dbo: GameDBO): GameShortDTO {
     return {
       id: dbo.id,
@@ -30,14 +34,14 @@ export class GamesMapper {
       fieldId: dbo.field_id,
       homeTeamId: dbo.home_team_id,
       awayTeamId: dbo.away_team_id,
-      scheduledDate: dbo.scheduled_date
+      scheduledDate: dbo.scheduled_date,
     };
   }
 
   // NewDTO -> DBO (When creating)
   static toDBO(dto: NewGameDTO, newId: number, autoRefereeId: number): GameDBO {
     const now = new Date();
-    
+
     // Business Rule: If fieldId and scheduledDate are present, the status is 'scheduled', otherwise 'created'
     let initialStatus = EGameStatus.CREATED;
     if (dto.fieldId && dto.scheduledDate) {
@@ -56,7 +60,7 @@ export class GamesMapper {
       away_score: null,
       scheduled_date: dto.scheduledDate || null,
       created_at: now,
-      updated_at: now
+      updated_at: now,
     };
   }
 }

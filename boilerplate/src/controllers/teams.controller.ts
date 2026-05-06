@@ -1,6 +1,6 @@
 import { Request, Response, Router } from "express";
 import { TeamsService } from "../services/teams.service";
-import { AuthService } from "../services/auth.service"; // Ton middleware d'authentification
+import { AuthService } from "../services/auth.service";
 import { EROLES } from "../models/user.model";
 import { isNumber, isNewTeamDTO, isTeamDTO } from "../utils/guards";
 import { AuthenticatedRequest } from "../models/auth.model";

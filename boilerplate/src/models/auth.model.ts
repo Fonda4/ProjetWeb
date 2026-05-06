@@ -1,6 +1,5 @@
-// src/models/auth.model.ts
-import { EROLES,UserDTO } from "./user.model";
-import { Request } from 'express';
+import { EROLES, UserDTO } from "./user.model";
+import { Request } from "express";
 
 //client receives when login is successful
 export interface UserLoginDTO {
@@ -16,5 +15,5 @@ export interface AuthenticatedUserDTO {
 }
 
 export interface AuthenticatedRequest extends Request {
-  user?: UserDTO; 
+  user?: UserDTO;
 }

@@ -138,14 +138,14 @@ Authorization: {{ref_login.response.body.token}}
 ###
 # Field cannot be booked twice
 #
-PUT {{server}}/games/2
+PUT {{server}}/games/5
 Content-Type: application/json
 Authorization: {{ref_login.response.body.token}}
 
 {
-  "id": 2,
+  "id": 5,
   "status": "created",
-  "fieldId": 1,
+  "fieldId": 7,
   "scheduledDate": "{{known_date}}"
 }
 ###
@@ -157,7 +157,7 @@ Authorization: {{ref_login.response.body.token}}
 ###
 # Admin can hard delete a game
 #
-DELETE {{server}}/games/1
+DELETE {{server}}/games/2
 Authorization: {{admin_login.response.body.token}}
 
 

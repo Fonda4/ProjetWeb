@@ -3,17 +3,17 @@ import { UserShortDTO } from "./user.model";
 
 // Enum for the different types of sports that a team can be associated with
 export enum ESportType {
-  FOOTBALL = 'football',
-  BASKETBALL = 'basketball',
-  TENNIS = 'tennis',
-  VOLLEYBALL = 'volleyball',
-  HANDBALL = 'handball'
+  FOOTBALL = "football",
+  BASKETBALL = "basketball",
+  TENNIS = "tennis",
+  VOLLEYBALL = "volleyball",
+  HANDBALL = "handball",
 }
 
 // client sends when creating a new team (POST /teams)
 export interface NewTeamDTO {
   name: string;
-  description?: string; 
+  description?: string;
   sportType: ESportType;
 }
 
@@ -24,33 +24,33 @@ export interface TeamShortDTO {
   sportType: ESportType;
 }
 
-// Classic version of the team, used in GET /teams/:id 
+// Classic version of the team, used in GET /teams/:id
 export interface TeamDTO extends BasicModelDTO {
   id: number;
   name: string;
   description?: string;
   sportType: ESportType;
-  players: number[];     //Table of player IDs (we will resolve them to UserShortDTO in the service)
-  trainerId?: number;    // ID de l'entraîneur (optionnel au début)
+  players: number[]; //Table of player IDs (we will resolve them to UserShortDTO in the service)
+  trainerId?: number; // ID de l'entraîneur (optionnel au début)
 }
 
-// Full version of the team, used in GET /teams/own 
+// Full version of the team, used in GET /teams/own
 export interface TeamFullDTO extends BasicModelDTO {
   id: number;
   name: string;
   description?: string;
   sportType: ESportType;
-  players: UserShortDTO[]; // Ici, ce sont les vrais objets utilisateurs résumés !
+  players: UserShortDTO[]; //Here are the real summarized user objects!
   trainer?: UserShortDTO;
 }
 
 // 6. How the team is stored in the database (snake_case for the database)
- // snake_case for the database
+// snake_case for the database
 export interface TeamDBO extends BasicModelDBO {
   id: number;
   name: string;
   description?: string;
-  sport_type: ESportType; 
+  sport_type: ESportType;
   players: number[];
-  trainer_id?: number | null; 
+  trainer_id?: number | null;
 }

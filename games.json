@@ -1,0 +1,302 @@
+ "/games": {
+            "get": {
+                "tags": [
+                    "Games"
+                ],
+                "summary": "List upcoming and ongoing games (no auth required)",
+                "description": "No authentication required. Returns a short view of all upcoming and ongoing games\n(`GameShortDTO`). Only games whose `scheduledDate` is today or in the future are included;\npast games are excluded.\n",
+                "responses": {
+                    "200": {
+                        "description": "List of games",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/GameShortDTO"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Games"
+                ],
+                "summary": "Create a new game (referee only)",
+                "description": "Requires `referee` role. Creates a new game. The authenticated referee is automatically\nset as the game's `refereeId` if none is provided in the body. The initial status is\nset automatically: if both `fieldId` and `scheduledDate` are present the status becomes\n`scheduled`; otherwise it is set to `created`.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NewGameDTO"
+                            },
+                            "example": {
+                                "name": "Red Dragons vs Blue Eagles",
+                                "homeTeamId": 1,
+                                "awayTeamId": 2
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Game created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GameDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or missing fields"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not a referee"
+                    }
+                }
+            }
+        },
+        "/games/{id}": {
+            "get": {
+                "tags": [
+                    "Games"
+                ],
+                "summary": "Get a game by ID (no auth required)",
+                "description": "No authentication required. Returns the full representation of a single game (`GameDTO`).\n",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Game details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GameDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID"
+                    },
+                    "404": {
+                        "description": "Game not found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Games"
+                ],
+                "summary": "Update a game (referee only)",
+                "description": "Requires `referee` role. Replaces the game's fields with the provided values.\nBody must include `id` matching the URL parameter; if body `id` and path `{id}` differ,\nreturns 400. Games in `finished` or `cancelled`\nstatus cannot be updated. For games in `started` status, `fieldId`, `refereeId`,\n`homeTeamId`, and `awayTeamId` are locked and cannot be changed.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GameDTO"
+                            },
+                            "example": {
+                                "id": 1,
+                                "name": "Red Dragons vs Blue Eagles — Final",
+                                "status": "scheduled",
+                                "homeTeamId": 1,
+                                "awayTeamId": 2,
+                                "scheduledDate": "2025-06-15T14:00:00.000Z"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated game",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GameDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid payload (including body/path ID mismatch)"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not a referee"
+                    },
+                    "404": {
+                        "description": "Game not found"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Games"
+                ],
+                "summary": "Delete a game (admin only)",
+                "description": "Requires `admin` role. Permanently removes the game from the data store (hard delete).\nThe record cannot be recovered.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Game deleted (no content)"
+                    },
+                    "400": {
+                        "description": "Invalid ID"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not an admin"
+                    },
+                    "500": {
+                        "description": "Failed to delete game"
+                    }
+                }
+            }
+        },
+        "/games/{id}/score/{home}/{away}": {
+            "patch": {
+                "tags": [
+                    "Games"
+                ],
+                "summary": "Set the score of a started game (referee only)",
+                "description": "Requires `referee` role. Overwrites the home and away score of a game with the values\nfrom the URL path parameters. The game must be in `started` status — any other status returns 400.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    },
+                    {
+                        "in": "path",
+                        "name": "home",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "description": "Home team score"
+                    },
+                    {
+                        "in": "path",
+                        "name": "away",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "description": "Away team score"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated game with new score",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GameDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Game not found, not in started status, or invalid score values"
+                    },
+                    "401": {
+                        "description": "Missing or invalid token"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not a referee"
+                    }
+                }
+            }
+        },
+        "/games/{id}/status/{status}": {
+            "patch": {
+                "tags": [
+                    "Games"
+                ],
+                "summary": "Update game status (referee, trainer, or admin)",
+                "description": "Requires `referee`, `trainer`, or `admin` role. Transitions the game to the requested\nstatus. Allowed transitions:\n- `created` ? `cancelled`\n- `scheduled` ? `started` (requires `fieldId`, `refereeId`, `homeTeamId`, and `awayTeamId` to all be set)\n- `scheduled` ? `cancelled`\n- `started` ? `finished`\nAny other transition returns 400.\n",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdParam"
+                    },
+                    {
+                        "in": "path",
+                        "name": "status",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/EGameStatus"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated game with new status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GameDTO"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or disallowed status transition, or missing prerequisites for starting"
+                    },
+                    "401": {
+                        "description": "Authenticated user does not have referee, trainer, or admin role"
+                    }
+                }
+            }
+        },

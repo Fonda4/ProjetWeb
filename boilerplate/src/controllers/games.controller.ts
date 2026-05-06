@@ -1,4 +1,3 @@
-// src/controllers/games.controller.ts
 import { Request, Response, Router } from "express";
 import { GamesService } from "../services/games.service";
 import { AuthService } from "../services/auth.service";
@@ -10,15 +9,19 @@ import { LoggerService } from "../services/logger.service";
 
 export const gamesController = Router();
 
-// GET /games
-gamesController.get("/", (req: Request, res: Response) => {
+/**
+ * GET /games
+ * Retrieves the list of all upcoming and ongoing games
+ */ gamesController.get("/", (req: Request, res: Response) => {
   LoggerService.info("[GamesController] GET /games called");
   const games = GamesService.getAll();
   res.status(200).json(games);
 });
 
-// GET /games/:id
-gamesController.get("/:id", (req: Request, res: Response) => {
+/**
+ * GET /games/:id
+ * Retrieves a specific game by its ID
+ */ gamesController.get("/:id", (req: Request, res: Response) => {
   LoggerService.info(`[GamesController] GET /games/${req.params.id} called`);
   const id = Number(req.params.id);
   if (!isNumber(id)) {
@@ -36,45 +39,58 @@ gamesController.get("/:id", (req: Request, res: Response) => {
   res.status(200).json(game);
 });
 
-// POST /games (Referee only)
-  gamesController.post(
-    "/",
-    AuthService.authorize,
-    (req: AuthenticatedRequest, res: Response) => {
-      LoggerService.info("[GamesController] POST /games called");
-      const loggedInUser = req.user;
+/**
+ * POST /games
+ * Creates a new game (Referee only)
+ */
+gamesController.post(
+  "/",
+  AuthService.authorize,
+  (req: AuthenticatedRequest, res: Response) => {
+    LoggerService.info("[GamesController] POST /games called");
+    const loggedInUser = req.user;
 
-      // Guard: Check authentication
-      if (!loggedInUser) {
-        LoggerService.error("[GamesController] Unauthenticated user attempted to create a game");
-        return res.status(401).send("Unauthenticated user");
-      }
-
-      // Guard: Check role (Referee only)
-      if (loggedInUser.role !== EROLES.REFEREE) {
-        LoggerService.error(`[GamesController] Forbidden: User ${loggedInUser.username} is not a referee`);
-        return res.status(403).send("Forbidden: Only referees can create games");
-      }
-
-      const gameData = req.body;
-
-      // Guard: Validate body data shape
-      if (!isNewGameDTO(gameData)) {
-        LoggerService.error("[GamesController] Bad Request: Invalid data for new game");
-        return res.status(400).send("Bad Request: Invalid data");
-      }
-
-      // Call the service to process the request
-      const newGame = GamesService.create(gameData, loggedInUser.id);
-      
-      // Happy Path: Success (201 Created)
-      LoggerService.info(`[GamesController] Game created successfully by ${loggedInUser.username}`);
-      res.status(201).json(newGame);
+    // Guard: Check authentication
+    if (!loggedInUser) {
+      LoggerService.error(
+        "[GamesController] Unauthenticated user attempted to create a game",
+      );
+      return res.status(401).send("Unauthenticated user");
     }
-  );
 
-// PUT /games/:id (Referee only)
-gamesController.put(
+    // Guard: Check role (Referee only)
+    if (loggedInUser.role !== EROLES.REFEREE) {
+      LoggerService.error(
+        `[GamesController] Forbidden: User ${loggedInUser.username} is not a referee`,
+      );
+      return res.status(403).send("Forbidden: Only referees can create games");
+    }
+
+    const gameData = req.body;
+
+    // Guard: Validate body data shape
+    if (!isNewGameDTO(gameData)) {
+      LoggerService.error(
+        "[GamesController] Bad Request: Invalid data for new game",
+      );
+      return res.status(400).send("Bad Request: Invalid data");
+    }
+
+    // Call the service to process the request
+    const newGame = GamesService.create(gameData, loggedInUser.id);
+
+    // Happy Path: Success (201 Created)
+    LoggerService.info(
+      `[GamesController] Game created successfully by ${loggedInUser.username}`,
+    );
+    res.status(201).json(newGame);
+  },
+);
+
+/**
+ * PUT /games/:id
+ * Updates a specific game
+ */ gamesController.put(
   "/:id",
   AuthService.authorize,
   (req: AuthenticatedRequest, res: Response) => {
@@ -106,28 +122,33 @@ gamesController.put(
       return res.status(400).send("Path ID and Body ID mismatch");
     }
 
-      const updatedGame = GamesService.update(id, gameData);
+    const updatedGame = GamesService.update(id, gameData);
 
-      if (updatedGame === undefined) {
-        LoggerService.error(`[GamesController] Game ${id} not found`);
-        return res.status(404).send("Not Found");
-      }
+    if (updatedGame === undefined) {
+      LoggerService.error(`[GamesController] Game ${id} not found`);
+      return res.status(404).send("Not Found");
+    }
 
-      if (updatedGame === null) {
-        LoggerService.error(
-          `[GamesController] Cannot update game ${id}: finished/cancelled status, locked fields, or field already booked`
+    if (updatedGame === null) {
+      LoggerService.error(
+        `[GamesController] Cannot update game ${id}: finished/cancelled status, locked fields, or field already booked`,
+      );
+      return res
+        .status(400)
+        .send(
+          "Cannot update game: finished/cancelled status, locked fields, or field already booked",
         );
-        return res
-          .status(400)
-          .send("Cannot update game: finished/cancelled status, locked fields, or field already booked");
-      }
+    }
 
-      LoggerService.info(`[GamesController] Game ${id} updated successfully`);
-      res.status(200).json(updatedGame);
+    LoggerService.info(`[GamesController] Game ${id} updated successfully`);
+    res.status(200).json(updatedGame);
   },
 );
 
-// DELETE /games/:id (Admin only)
+/**
+ * DELETE /games/:id
+ * Deletes a specific game (Admin only)
+ */
 gamesController.delete(
   "/:id",
   AuthService.authorize,
@@ -172,7 +193,7 @@ gamesController.delete(
       LoggerService.error(
         `[GamesController] Delete failed: Game ${id} not found`,
       );
-      return res.status(404).send("Not Found");
+      return res.status(500).send("Not Found");
     }
 
     // Happy Path: Success (204 No Content)
@@ -183,7 +204,10 @@ gamesController.delete(
   },
 );
 
-// PATCH /games/:id/score/:home/:away (Referee only)
+/**
+ * PATCH /games/:id/score/:home/:away
+ * Updates the score of a specific game (Referee only)
+ */
 gamesController.patch(
   "/:id/score/:home/:away",
   AuthService.authorize,
@@ -235,7 +259,10 @@ gamesController.patch(
   },
 );
 
-// PATCH /games/:id/status/:status (Referee, Trainer, Admin)
+/**
+ * PATCH /games/:id/status/:status
+ * Updates the status of a specific game (Referee, Trainer, Admin)
+ */
 gamesController.patch(
   "/:id/status/:status",
   AuthService.authorize,

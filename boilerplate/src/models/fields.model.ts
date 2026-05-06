@@ -1,4 +1,3 @@
-// src/models/fields.model.ts
 import { BasicModelDBO, BasicModelDTO } from "./basic.model";
 
 // Payload required to create a new field (POST)

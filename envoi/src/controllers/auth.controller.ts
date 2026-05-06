@@ -18,7 +18,7 @@ authController.post('/login', (req : Request, res : Response) => {
     LoggerService.error(
       "[AuthController] Bad Request: Missing username or password",
     );
-    return res.status(400).send("Bad Request: Missing username or password");
+    return res.status(400).send("Missing or empty username / password");
   }
 
   // 2. Call the service to authenticate the user
@@ -29,12 +29,20 @@ authController.post('/login', (req : Request, res : Response) => {
     LoggerService.error(
       `[AuthController] Unauthorized: Invalid credentials for user ${loginData.username}`,
     );
-    return res.status(401).send("Unauthorized: Invalid credentials");
+    return res.status(401).send("Invalid credentials");
   }
 
-  // 4. Happy Path : Success ! Return the object with the token
+// Step 4: Happy Path - Success! 
   LoggerService.info(
-    `[AuthController] User ${loginData.username} successfully authenticated`,
+    `[AuthController] User ${loginData.username} successfully authenticated`
   );
-  res.status(200).json(authResult);
+
+  // We format the response to explicitly exclude the role, matching your requirements
+  const responsePayload = {
+    username: authResult.username,
+    token: authResult.token
+  };
+
+  // Return the newly formatted object
+  res.status(200).json(responsePayload);
 });
