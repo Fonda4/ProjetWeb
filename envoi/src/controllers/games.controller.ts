@@ -37,42 +37,41 @@ gamesController.get("/:id", (req: Request, res: Response) => {
 });
 
 // POST /games (Referee only)
-gamesController.post(
-  "/",
-  AuthService.authorize,
-  (req: AuthenticatedRequest, res: Response) => {
-    LoggerService.info("[GamesController] POST /games called");
-    const loggedInUser = req.user;
+  gamesController.post(
+    "/",
+    AuthService.authorize,
+    (req: AuthenticatedRequest, res: Response) => {
+      LoggerService.info("[GamesController] POST /games called");
+      const loggedInUser = req.user;
 
-    if (!loggedInUser) {
-      LoggerService.error(
-        "[GamesController] Unauthenticated user attempted to create a game",
-      );
-      return res.status(401).send("Unauthenticated user");
+      // Guard: Check authentication
+      if (!loggedInUser) {
+        LoggerService.error("[GamesController] Unauthenticated user attempted to create a game");
+        return res.status(401).send("Unauthenticated user");
+      }
+
+      // Guard: Check role (Referee only)
+      if (loggedInUser.role !== EROLES.REFEREE) {
+        LoggerService.error(`[GamesController] Forbidden: User ${loggedInUser.username} is not a referee`);
+        return res.status(403).send("Forbidden: Only referees can create games");
+      }
+
+      const gameData = req.body;
+
+      // Guard: Validate body data shape
+      if (!isNewGameDTO(gameData)) {
+        LoggerService.error("[GamesController] Bad Request: Invalid data for new game");
+        return res.status(400).send("Bad Request: Invalid data");
+      }
+
+      // Call the service to process the request
+      const newGame = GamesService.create(gameData, loggedInUser.id);
+      
+      // Happy Path: Success (201 Created)
+      LoggerService.info(`[GamesController] Game created successfully by ${loggedInUser.username}`);
+      res.status(201).json(newGame);
     }
-
-    if (loggedInUser.role !== EROLES.REFEREE) {
-      LoggerService.error(
-        `[GamesController] Forbidden: User ${loggedInUser.username} is not a referee`,
-      );
-      return res.status(403).send("Forbidden: Only referees can create games");
-    }
-
-    const gameData = req.body;
-    if (!isNewGameDTO(gameData)) {
-      LoggerService.error(
-        "[GamesController] Bad Request: Invalid data for new game",
-      );
-      return res.status(400).send("Bad Request: Invalid data");
-    }
-
-    const newGame = GamesService.create(gameData, loggedInUser.id);
-    LoggerService.info(
-      `[GamesController] Game created successfully by ${loggedInUser.username}`,
-    );
-    res.status(201).json(newGame);
-  },
-);
+  );
 
 // PUT /games/:id (Referee only)
 gamesController.put(
@@ -107,22 +106,24 @@ gamesController.put(
       return res.status(400).send("Path ID and Body ID mismatch");
     }
 
-    const updatedGame = GamesService.update(id, gameData);
-    if (updatedGame === undefined) {
-      LoggerService.error(`[GamesController] Game ${id} not found`);
-      return res.status(404).send("Not Found");
-    }
-    if (updatedGame === null) {
-      LoggerService.error(
-        `[GamesController] Cannot update finished/cancelled games or locked fields for game ${id}`,
-      );
-      return res
-        .status(400)
-        .send("Cannot update finished/cancelled games or locked fields");
-    }
+      const updatedGame = GamesService.update(id, gameData);
 
-    LoggerService.info(`[GamesController] Game ${id} updated successfully`);
-    res.status(200).json(updatedGame);
+      if (updatedGame === undefined) {
+        LoggerService.error(`[GamesController] Game ${id} not found`);
+        return res.status(404).send("Not Found");
+      }
+
+      if (updatedGame === null) {
+        LoggerService.error(
+          `[GamesController] Cannot update game ${id}: finished/cancelled status, locked fields, or field already booked`
+        );
+        return res
+          .status(400)
+          .send("Cannot update game: finished/cancelled status, locked fields, or field already booked");
+      }
+
+      LoggerService.info(`[GamesController] Game ${id} updated successfully`);
+      res.status(200).json(updatedGame);
   },
 );
 

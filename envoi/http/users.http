@@ -185,7 +185,7 @@ PUT {{server}}/users/2 HTTP/1.1
 ###
 # ids must match
 #
-PUT {{server}}/users/1 HTTP/1.1
+PUT {{server}}/users/2 HTTP/1.1
 Authorization: {{player_login.response.body.token}}
 Content-Type: application/json
 
