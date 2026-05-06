@@ -26,7 +26,7 @@ usersController.get(
       LoggerService.error(
         "[UsersController] Unauthorized: Unauthenticated user access attempt",
       );
-      return res.status(401).send("Unauthenticated user");
+      return res.status(401).send("Missing or invalid token");
     }
 
     const usersDTO = UsersService.getAll();
@@ -68,7 +68,7 @@ LoggerService.info("[UsersController] POST /users called");
     // Guard: Strict verification from the body
     if (!isNewUserDTO(userData)) {
         LoggerService.error("[UsersController] Bad Request: Missing or invalid fields in body");
-        return res.status(400).send("Bad Request: Missing or invalid fields in body");
+        return res.status(400).send("Invalid or missing fields");
     }
 
     // Business Rule: Email format validation
@@ -102,7 +102,7 @@ usersController.get("/username/:username", (req: Request, res: Response) => {
     // 2. Guard: Check from the URL parameter (is it a non-empty string?)
     if (!isString(username) || username.trim() === "") {
         LoggerService.error("[UsersController] Bad Request: Invalid username parameter");
-        return res.status(401).send("Bad Request: Invalid username");
+        return res.status(401).send("Missing or invalid token, or caller is not admin/referee");
     }
 
     // 3. Call the service to get the user by their username
@@ -111,7 +111,7 @@ usersController.get("/username/:username", (req: Request, res: Response) => {
     // 4. Handle failure: User not found
     if (!user) {
         LoggerService.error(`[UsersController] Not Found: User with username '${username}' does not exist`);
-        return res.status(404).send("Not Found: User does not exist");
+        return res.status(404).send("User not found");
     }
 
     // 5. Happy Path: Success
@@ -141,7 +141,7 @@ usersController.get(
     // 3. Guard: Check from the URL parameter
     if (!isString(email) || email.trim() === "") {
         LoggerService.error("[UsersController] Bad Request: Invalid email parameter");
-        return res.status(401).send("Bad Request: Invalid email");
+        return res.status(401).send("Missing or invalid token, or caller is not admin/referee");
     }
 
     // 4. Call the service
@@ -150,7 +150,7 @@ usersController.get(
     // 5. Handle failure: User not found
     if (!user) {
         LoggerService.error(`[UsersController] Not Found: User with email '${email}' does not exist`);
-        return res.status(404).send("Not Found: User does not exist");
+        return res.status(404).send("User not found");
     }
 
     // 6. Happy Path: Success
