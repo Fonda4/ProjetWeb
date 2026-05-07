@@ -130,12 +130,12 @@ export class GamesService {
     }
 
     //Update fields
-    dbos[index].name = gameData.name;
-    dbos[index].field_id = gameData.fieldId || null;
-    dbos[index].referee_id = gameData.refereeId || null;
-    dbos[index].home_team_id = gameData.homeTeamId;
-    dbos[index].away_team_id = gameData.awayTeamId;
-    dbos[index].scheduled_date = gameData.scheduledDate || null;
+dbos[index].name = gameData.name ?? currentGame.name;
+    dbos[index].field_id = gameData.fieldId ?? currentGame.field_id;
+    dbos[index].referee_id = gameData.refereeId ?? currentGame.referee_id;
+    dbos[index].home_team_id = gameData.homeTeamId ?? currentGame.home_team_id;
+    dbos[index].away_team_id = gameData.awayTeamId ?? currentGame.away_team_id;
+    dbos[index].scheduled_date = gameData.scheduledDate ?? currentGame.scheduled_date;
     dbos[index].updated_at = new Date();
 
     //NEW: Auto-assign status based on field and date presence
@@ -241,6 +241,9 @@ export class GamesService {
         dbos[index].away_team_id
       ) {
         isValidTransition = true;
+
+        dbos[index].home_score = 0;
+        dbos[index].away_score = 0;
       }
     }
 

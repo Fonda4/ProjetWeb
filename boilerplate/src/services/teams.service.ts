@@ -112,10 +112,10 @@ export class TeamsService {
 
     //Mise à jour complète de l'objet
     dbos[index].name = teamData.name;
-    dbos[index].description = teamData.description;
+    dbos[index].description = teamData.description ?? "";
     dbos[index].sport_type = teamData.sportType;
     dbos[index].players = teamData.players;
-    dbos[index].trainer_id = teamData.trainerId;
+    dbos[index].trainer_id = teamData.trainerId ?? dbos[index].trainer_id;
     dbos[index].updated_at = new Date();
 
     this.writeTeamsDB(dbos);

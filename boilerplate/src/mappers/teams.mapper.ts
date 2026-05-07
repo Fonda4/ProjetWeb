@@ -9,18 +9,16 @@ export class TeamsMapper {
   /**
    * DBO -> DTO : From the database format to the format we want to send to the client
    */
-  static toDTO(dbo: TeamDBO): TeamDTO {
-    return {
-      id: dbo.id,
-      name: dbo.name,
-      description: dbo.description,
-      sportType: dbo.sport_type, // Conversion snake_case -> camelCase
-      players: dbo.players,
-      trainerId: dbo.trainer_id !== null ? dbo.trainer_id : undefined,
-      createdAt: dbo.created_at,
-      updatedAt: dbo.updated_at,
-    };
-  }
+static toDTO(dbo: TeamDBO): TeamDTO {
+        return {
+            id: dbo.id,
+            name: dbo.name,
+            description: dbo.description,
+            sportType: dbo.sport_type,
+            players: dbo.players,
+            trainerId: dbo.trainer_id
+        };
+    }
 
   /**
    * DBO -> ShortDTO : From the database format to the reduced format we want to send to the client (for lists)

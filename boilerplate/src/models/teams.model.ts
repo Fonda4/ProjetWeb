@@ -7,7 +7,7 @@ export enum ESportType {
   BASKETBALL = "basketball",
   TENNIS = "tennis",
   VOLLEYBALL = "volleyball",
-  HANDBALL = "handball",
+  HOCKEY = "hockey",
 }
 
 // client sends when creating a new team (POST /teams)
@@ -46,11 +46,14 @@ export interface TeamFullDTO extends BasicModelDTO {
 
 // 6. How the team is stored in the database (snake_case for the database)
 // snake_case for the database
-export interface TeamDBO extends BasicModelDBO {
-  id: number;
-  name: string;
-  description?: string;
-  sport_type: ESportType;
-  players: number[];
-  trainer_id?: number | null;
+export interface TeamDBO {
+    id: number;
+    name: string;
+    description: string;
+    sport_type: ESportType;
+    players: number[];
+    // 'trainer_id' is no longer nullable! It MUST be a number.
+    trainer_id: number; 
+    created_at: Date;
+    updated_at: Date;
 }

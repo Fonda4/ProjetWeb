@@ -12,7 +12,8 @@ export const gamesController = Router();
 /**
  * GET /games
  * Retrieves the list of all upcoming and ongoing games
- */ gamesController.get("/", (req: Request, res: Response) => {
+ */
+gamesController.get("/", (req: Request, res: Response) => {
   LoggerService.info("[GamesController] GET /games called");
   const games = GamesService.getAll();
   res.status(200).json(games);
@@ -21,7 +22,8 @@ export const gamesController = Router();
 /**
  * GET /games/:id
  * Retrieves a specific game by its ID
- */ gamesController.get("/:id", (req: Request, res: Response) => {
+ */
+gamesController.get("/:id", (req: Request, res: Response) => {
   LoggerService.info(`[GamesController] GET /games/${req.params.id} called`);
   const id = Number(req.params.id);
   if (!isNumber(id)) {
@@ -90,7 +92,8 @@ gamesController.post(
 /**
  * PUT /games/:id
  * Updates a specific game
- */ gamesController.put(
+ */
+ gamesController.put(
   "/:id",
   AuthService.authorize,
   (req: AuthenticatedRequest, res: Response) => {
