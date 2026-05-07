@@ -62,8 +62,7 @@ usersController.get(
 
 /**
  * POST /users
- * Create a new user
- * Auth: Not required (This endpoint is used for registration, so it cannot require authentication)
+ * Creates a new user
  */
 usersController.post("/", (req: Request, res: Response) => {
   LoggerService.info("[UsersController] POST /users called");
@@ -72,7 +71,7 @@ usersController.post("/", (req: Request, res: Response) => {
   // Guard: Strict verification from the body
   if (!isNewUserDTO(userData)) {
     LoggerService.error(
-      "[UsersController] Bad Request: Missing or invalid fields in body"
+      "[UsersController] Bad Request: Missing or invalid fields in body",
     );
     return res.status(400).send("Invalid or missing fields");
   }
@@ -109,8 +108,9 @@ usersController.post("/", (req: Request, res: Response) => {
 });
 
 /**
+/**
  * GET /users/username/:username
- * Retrieves a user by their username (for authentication purposes, not for general use)
+ * Retrieves a user by their username
  */
 usersController.get("/username/:username", (req: Request, res: Response) => {
   // 1. Log the incoming request
@@ -201,8 +201,7 @@ usersController.get(
 
 /**
  * GET /users/:id
- * Get user infos (Full for Admin/Self, Short for others)
- * Auth: REQUIRED
+ * Retrieves a specific user by their ID
  */
 usersController.get(
   "/:id",
@@ -242,33 +241,32 @@ usersController.get(
       return res.status(404).send("User not found");
     }
 
-// 6. Business Logic & Happy Path
-    
+    // 6. Business Logic & Happy Path
+
     if (loggedInUser.role === EROLES.ADMIN) {
       LoggerService.info(
         `[UsersController] Admin ${loggedInUser.username} retrieved full data for user ${id}`,
       );
       return res.status(200).json(UsersMapper.toDTO(targetUserDBO));
-      
     } else if (loggedInUser.id === id) {
       LoggerService.info(
         `[UsersController] User ${loggedInUser.username} retrieved their own short profile`,
       );
       return res.status(200).json(UsersMapper.toShortDTO(targetUserDBO));
-      
     } else {
       LoggerService.error(
         `[UsersController] Forbidden: ${loggedInUser.username} tried to access user ${id}'s profile`,
       );
-      return res.status(403).send("Non-admin caller tried to view another user's profile");
+      return res
+        .status(403)
+        .send("Non-admin caller tried to view another user's profile");
     }
   },
 );
 
 /**
  * DELETE /users/:id
- * Soft delete a user by changing their status to INACTIVE
- * Auth: REQUIRED
+ * Soft deletes a user by changing their status to inactive
  */
 usersController.delete(
   "/:id",
@@ -339,8 +337,7 @@ usersController.delete(
 
 /**
  * PUT /users/:id
- * Update a profile
- * Auth: REQUIRED
+ * Updates a specific user's profile
  */
 usersController.put(
   "/:id",
@@ -362,7 +359,9 @@ usersController.put(
       LoggerService.error(
         `[UsersController] Bad Request: Invalid ID (${req.params.id})`,
       );
-      return res.status(400).send("Invalid payload (including body/path ID mismatch)");
+      return res
+        .status(400)
+        .send("Invalid payload (including body/path ID mismatch)");
     }
 
     if (!isUserDTO(bodyData)) {
@@ -400,7 +399,11 @@ usersController.put(
       LoggerService.error(
         `[UsersController] Forbidden: User ${loggedInUser.username} tried to update user ${id}`,
       );
-      return res.status(403).send("Authenticated user is not an admin and tries to update another user");
+      return res
+        .status(403)
+        .send(
+          "Authenticated user is not an admin and tries to update another user",
+        );
     }
 
     // Happy Path: call services
@@ -419,6 +422,10 @@ usersController.put(
   },
 );
 
+/**
+ * PATCH /users/:id/role/:role
+ * Updates a specific user's role
+ */
 usersController.patch(
   "/:id/role/:role",
   AuthService.authorize,
@@ -482,6 +489,10 @@ usersController.patch(
   },
 );
 
+/**
+ * PATCH /users/:id/reactivate
+ * Reactivates an inactive user account
+ */
 usersController.patch(
   "/:id/reactivate",
   AuthService.authorize,
@@ -526,11 +537,7 @@ usersController.patch(
       LoggerService.error(
         `[UsersController] Not Found/Conflict: User ${id} already active or not found`,
       );
-      return res
-        .status(404)
-        .send(
-          "User not found",
-        );
+      return res.status(404).send("User not found");
     }
 
     // 7. Happy Path: Success

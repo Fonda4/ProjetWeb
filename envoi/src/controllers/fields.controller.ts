@@ -1,4 +1,3 @@
-// src/controllers/fields.controller.ts
 import { Request, Response, Router } from "express";
 import { FieldsService } from "../services/fields.service";
 import { AuthService } from "../services/auth.service";
@@ -9,15 +8,19 @@ import { AuthenticatedRequest } from "../models/auth.model";
 
 export const fieldsController = Router();
 
-// GET /fields (No auth required)
-fieldsController.get("/", (req: Request, res: Response) => {
+/**
+ * GET /fields
+ * Retrieves the list of all fields
+ */ fieldsController.get("/", (req: Request, res: Response) => {
   LoggerService.info("[FieldsController] GET /fields called");
   const fields = FieldsService.getAll();
   res.status(200).json(fields);
 });
 
-// GET /fields/:id (No auth required)
-fieldsController.get("/:id", (req: Request, res: Response) => {
+/**
+ * GET /fields/:id
+ * Retrieves a specific field by its ID
+ */ fieldsController.get("/:id", (req: Request, res: Response) => {
   LoggerService.info("[GET] /fields/:id");
 
   const id = Number(req.params.id);
@@ -39,7 +42,10 @@ fieldsController.get("/:id", (req: Request, res: Response) => {
   return;
 });
 
-// POST /fields (Admin only)
+/**
+ * POST /fields
+ * Creates a new field (Admin only)
+ */
 fieldsController.post(
   "/",
   AuthService.authorize, // Step 1: Middleware checks the token
@@ -90,7 +96,10 @@ fieldsController.post(
   },
 );
 
-// PUT /fields/:id (Admin only)
+/**
+ * PUT /fields/:id
+ * Updates a specific field (Admin only)
+ */
 fieldsController.put(
   "/:id",
   AuthService.authorize,
@@ -136,9 +145,8 @@ fieldsController.put(
     if (!updatedField) {
       LoggerService.error(`[FieldsController] Field with ID ${id} not found`);
       res.status(404).send("Field not found");
-    } 
+    }
 
     res.status(200).json(updatedField);
   },
 );
-

@@ -2,19 +2,18 @@ import fs from "fs";
 
 export class LoggerService {
   /**
- * Write a log message to a file
- * @param filePath the path to reach the file
- * @param logMessage the message to write in the file
- */
- private static writeLogs(filePath: string, logMessage: string) {
-  logMessage = `${new Date().toISOString()} - ${logMessage}\n`;
-  if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, logMessage);
-  } else {
-    fs.appendFileSync(filePath, logMessage);
+   * Write a log message to a file
+   * @param filePath the path to reach the file
+   * @param logMessage the message to write in the file
+   */
+  private static writeLogs(filePath: string, logMessage: string) {
+    logMessage = `${new Date().toISOString()} - ${logMessage}\n`;
+    if (!fs.existsSync(filePath)) {
+      fs.writeFileSync(filePath, logMessage);
+    } else {
+      fs.appendFileSync(filePath, logMessage);
+    }
   }
-}
-
 
   /**
    * Private generic log function
@@ -30,7 +29,7 @@ export class LoggerService {
    * @param message the message to log
    */
   static info(message: string): void {
-    this.log(message, 'INFO');
+    this.log(message, "INFO");
   }
 
   /**
@@ -38,7 +37,7 @@ export class LoggerService {
    * @param message the message to log
    */
   static debug(message: string): void {
-    this.log(message, 'DEBUG');
+    this.log(message, "DEBUG");
   }
 
   /**
@@ -47,11 +46,11 @@ export class LoggerService {
    */
   static error(error: unknown): void {
     if (error instanceof Error) {
-      this.log(error.message, 'ERROR');
-      LoggerService.writeLogs('logs/error.log', error.message); 
-    } else if (typeof error === 'string') {
-      this.log(error, 'ERROR');
-      LoggerService.writeLogs('logs/error.log', error); 
+      this.log(error.message, "ERROR");
+      LoggerService.writeLogs("logs/error.log", error.message);
+    } else if (typeof error === "string") {
+      this.log(error, "ERROR");
+      LoggerService.writeLogs("logs/error.log", error);
     }
   }
 }

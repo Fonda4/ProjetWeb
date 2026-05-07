@@ -1,21 +1,28 @@
-import { UserDBO, UserDTO, UserShortDTO, EROLES, EUserStatus, NewUserDTO, UserFullDTO } from '../models/user.model';
+import {
+  UserDBO,
+  UserDTO,
+  UserShortDTO,
+  EROLES,
+  EUserStatus,
+  NewUserDTO,
+  UserFullDTO,
+} from "../models/user.model";
 
 export class UsersMapper {
-  
   /**
    * Tansforms the data from the DB (DBO) to the format we want to send to the client (DTO)
    */
   static toDTO(dbo: UserDBO): UserDTO {
     return {
       id: dbo.id,
-      firstName: dbo.first_name,     // transformation snake_case -> camelCase
-      lastName: dbo.last_name,       
+      firstName: dbo.first_name, // transformation snake_case -> camelCase
+      lastName: dbo.last_name,
       email: dbo.email,
       username: dbo.username,
       role: dbo.role,
       status: dbo.status,
       createdAt: dbo.created_at,
-      updatedAt: dbo.updated_at
+      updatedAt: dbo.updated_at,
     };
   }
 
@@ -26,7 +33,7 @@ export class UsersMapper {
     return {
       id: dbo.id,
       firstName: dbo.first_name,
-      lastName: dbo.last_name
+      lastName: dbo.last_name,
     };
   }
 
@@ -34,37 +41,42 @@ export class UsersMapper {
    * Tansforms the data from the client (NewUserDTO) to the database format (DBO)
    * The server decides the creation date and ID.
    */
-  static toDBO(dto: NewUserDTO, newId: number, role: EROLES, status: EUserStatus): UserDBO {
-    const now = new Date(); 
-    
+  static toDBO(
+    dto: NewUserDTO,
+    newId: number,
+    role: EROLES,
+    status: EUserStatus,
+  ): UserDBO {
+    const now = new Date();
+
     return {
       id: newId,
-      first_name: dto.firstName,     
-      last_name: dto.lastName,       
+      first_name: dto.firstName,
+      last_name: dto.lastName,
       email: dto.email,
       username: dto.username,
-      password: dto.password,        
+      password: dto.password,
       role: role,
       status: status,
       created_at: now,
-      updated_at: now
+      updated_at: now,
     };
   }
 
   /*
-  * Tansforms the data from the DB (DBO) to the full format we want to send to the client (FullDTO)
-  */
+   * Tansforms the data from the DB (DBO) to the full format we want to send to the client (FullDTO)
+   */
   static toFullDTO(dbo: UserDBO): UserFullDTO {
     return {
       id: dbo.id,
-      firstName: dbo.first_name,     // transformation snake_case -> camelCase
-      lastName: dbo.last_name,       
+      firstName: dbo.first_name, // transformation snake_case -> camelCase
+      lastName: dbo.last_name,
       email: dbo.email,
       username: dbo.username,
       role: dbo.role,
       status: dbo.status,
       createdAt: dbo.created_at,
-      updatedAt: dbo.updated_at
+      updatedAt: dbo.updated_at,
     };
   }
 }

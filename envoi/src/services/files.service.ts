@@ -2,25 +2,24 @@ import fs from "fs";
 import { LoggerService } from "./logger.service";
 
 export class FilesService {
-
-  private static doesFolderExist(folderPath: string) : boolean {
+  private static doesFolderExist(folderPath: string): boolean {
     return fs.existsSync(folderPath);
   }
 
-  private static createFolder(folderPath: string) : void {
+  private static createFolder(folderPath: string): void {
     fs.mkdirSync(folderPath);
   }
 
-  private static doesFileExist(filePath: string) : boolean {
+  private static doesFileExist(filePath: string): boolean {
     return fs.existsSync(filePath);
   }
 
-  private static createFile(filePath: string) : void {
-    fs.writeFileSync(filePath, '');
+  private static createFile(filePath: string): void {
+    fs.writeFileSync(filePath, "");
   }
 
-  private static createDBIfNotExist(dbPath: string) : void {
-    const folderPath = dbPath.substring(0, dbPath.lastIndexOf('/'));
+  private static createDBIfNotExist(dbPath: string): void {
+    const folderPath = dbPath.substring(0, dbPath.lastIndexOf("/"));
     if (!this.doesFolderExist(folderPath)) {
       this.createFolder(folderPath);
     }
@@ -37,10 +36,10 @@ export class FilesService {
    * @throws Error if the file does not exist
    * Usage: const data : User[] = readFile<User>(filePath);
    */
-  public static readFile<T>(filePath: string) : T[] {
+  public static readFile<T>(filePath: string): T[] {
     this.createDBIfNotExist(filePath);
-    const dataString : string = fs.readFileSync(filePath, 'utf-8');
-    const data : T[] = JSON.parse(dataString);
+    const dataString: string = fs.readFileSync(filePath, "utf-8");
+    const data: T[] = JSON.parse(dataString);
     return data;
   }
 
@@ -51,10 +50,10 @@ export class FilesService {
    * @throws Error if the file cannot be written
    * Usage: writeFile<User>(filePath, data);
    */
-  public static writeFile<T>(filePath: string, data: T[]) : void {
+  public static writeFile<T>(filePath: string, data: T[]): void {
     this.createDBIfNotExist(filePath);
     const dataString = JSON.stringify(data, null, 2);
-    fs.writeFileSync(filePath, dataString, 'utf-8');
+    fs.writeFileSync(filePath, dataString, "utf-8");
   }
 
   /**
@@ -66,7 +65,7 @@ export class FilesService {
    * @throws Error if the file cannot be appended
    * Usage: appendFile<User>(filePath, data);
    */
-  public static appendFile<T>(filePath: string, data: T[]) : number {
+  public static appendFile<T>(filePath: string, data: T[]): number {
     try {
       const values = FilesService.readFile<T>(filePath);
       values.push(...data);
@@ -74,8 +73,7 @@ export class FilesService {
       return values.length - 1;
     } catch (error) {
       LoggerService.error(error);
-      throw new Error('Internal Error');
+      throw new Error("Internal Error");
     }
   }
-    
 }

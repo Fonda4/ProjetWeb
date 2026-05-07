@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Client - Games Manager</title>
+    <style>
+        /* Basic CSS for a clean interface */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e2e8f0;
+            color: #333;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+        h1 {
+            color: #005088;
+            border-bottom: 2px solid #11caa0;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #005088;
+            font-size: 1.2em;
+            margin-top: 30px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box; /* Ensures padding doesn't affect width */
+        }
+        button {
+            background-color: #11caa0;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0e9c7b;
+        }
+        .console-output {
+            background-color: #0d1117;
+            color: #7ee787;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            white-space: pre-wrap; /* Keeps formatting of JSON */
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Games Manager API Client</h1>
+        <p>This interface communicates with our local NodeJS server.</p>
+
+        <!-- SECTION 1: POST REQUEST (Login) -->
+        <section>
+            <h2>1. Authentication (HTTP POST)</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" placeholder="Enter username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" placeholder="Enter password" required>
+                </div>
+                <!-- Submitting this form triggers the POST request -->
+                <button type="submit">Login</button>
+            </form>
+            <div id="loginOutput" class="console-output">Awaiting action...</div>
+        </section>
+
+        <!-- SECTION 2: GET REQUEST (Fetch Games) -->
+        <section>
+            <h2>2. Fetch Data (HTTP GET)</h2>
+            <p>Requires authentication token (Base64 header) from step 1.</p>
+            <!-- Clicking this button triggers the GET request -->
+            <button id="fetchGamesBtn">Get All Games</button>
+            <div id="gamesOutput" class="console-output">Awaiting action...</div>
+        </section>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // As defined in our BINV1053 course, the server runs locally on port 3000
+        const API_BASE_URL = 'http://localhost:3000';
+
+        // --- HTTP POST: LOGIN ---
+        document.getElementById('loginForm').addEventListener('submit', async (event) => {
+            // Prevent the browser from refreshing the page on form submit
+            event.preventDefault(); 
+
+            const usernameInput = document.getElementById('username').value;
+            const passwordInput = document.getElementById('password').value;
+            const outputBox = document.getElementById('loginOutput');
+
+            outputBox.innerText = 'Sending POST request to /auth/login...';
+
+            try {
+                // The fetch() function is used to make HTTP requests
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST', // HTTP Verb
+                    headers: {
+                        'Content-Type': 'application/json' // Telling the server we send JSON
+                    },
+                    // We must stringify our JavaScript object into a JSON string
+                    body: JSON.stringify({ 
+                        username: usernameInput, 
+                        password: passwordInput 
+                    })
+                });
+
+                // Happy Path Check: HTTP Status 200-299
+                if (response.ok) {
+                    // In our simplified auth (from swag.json), we use base64 encoding
+                    // for the token: btoa(username)
+                    const token = btoa(usernameInput); 
+                    
+                    // Save the token in the browser's Local Storage for future requests
+                    localStorage.setItem('authToken', token);
+
+                    outputBox.innerText = `Success! HTTP Status: ${response.status}\nFake Token generated & saved: ${token}`;
+                } else {
+                    // Error Path
+                    outputBox.innerText = `Error! HTTP Status: ${response.status}\nCheck server logs.`;
+                }
+            } catch (error) {
+                // Network error (e.g., server is not running)
+                outputBox.innerText = `Network Error:\n${error.message}\nIs your NodeJS server running on port 3000?`;
+            }
+        });
+
+        // --- HTTP GET: FETCH GAMES ---
+        document.getElementById('fetchGamesBtn').addEventListener('click', async () => {
+            const outputBox = document.getElementById('gamesOutput');
+            outputBox.innerText = 'Sending GET request to /games...';
+
+            // Retrieve the token we saved during login
+            const token = localStorage.getItem('authToken');
+            
+            // Prepare our HTTP Headers
+            const requestHeaders = new Headers();
+            requestHeaders.append('Content-Type', 'application/json');
+            
+            // If the user logged in, append the Authorization header
+            if (token) {
+                requestHeaders.append('Authorization', token);
+            } else {
+                outputBox.innerText = 'Warning: No auth token found. Request might be rejected (401).';
+            }
+
+            try {
+                // By default, fetch() uses the GET method
+                const response = await fetch(`${API_BASE_URL}/games`, {
+                    method: 'GET',
+                    headers: requestHeaders
+                });
+
+                if (response.ok) {
+                    // Parse the JSON data returned by the server
+                    const data = await response.json();
+                    // Display the data beautifully formatted
+                    outputBox.innerText = `Success! HTTP Status: ${response.status}\n\nData received:\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    // Handle HTTP errors like 401 Unauthorized or 404 Not Found
+                    outputBox.innerText = `Error! HTTP Status: ${response.status}\nYou might need to login first.`;
+                }
+            } catch (error) {
+                outputBox.innerText = `Network Error:\n${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

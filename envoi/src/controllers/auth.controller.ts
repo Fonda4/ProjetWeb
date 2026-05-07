@@ -9,7 +9,7 @@ export const authController = Router();
  * POST /auth/login
  * Allows you to authenticate and obtain a token
  */
-authController.post('/login', (req : Request, res : Response) => {
+authController.post("/login", (req: Request, res: Response) => {
   LoggerService.info("[AuthController] POST /login called");
   const loginData = req.body;
 
@@ -32,15 +32,15 @@ authController.post('/login', (req : Request, res : Response) => {
     return res.status(401).send("Invalid credentials");
   }
 
-// Step 4: Happy Path - Success! 
+  // Step 4: Happy Path - Success!
   LoggerService.info(
-    `[AuthController] User ${loginData.username} successfully authenticated`
+    `[AuthController] User ${loginData.username} successfully authenticated`,
   );
 
   // We format the response to explicitly exclude the role, matching your requirements
   const responsePayload = {
     username: authResult.username,
-    token: authResult.token
+    token: authResult.token,
   };
 
   // Return the newly formatted object
