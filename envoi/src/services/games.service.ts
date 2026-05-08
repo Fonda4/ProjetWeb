@@ -263,15 +263,11 @@ dbos[index].name = gameData.name ?? currentGame.name;
     dbos: GameDBO[],
     fieldId: number,
     scheduledDate: string,
-    excludeGameId?: number,
   ): boolean {
     for (const game of dbos) {
       //Check if the field and date match exactly
       if (game.field_id === fieldId && game.scheduled_date === scheduledDate) {
-        //If we are updating a game, we must not compare it against itself
-        if (excludeGameId && game.id === excludeGameId) {
-          continue;
-        }
+
         //A cancelled game does not occupy the field
         if (game.status !== EGameStatus.CANCELLED) {
           return true; //Field is booked

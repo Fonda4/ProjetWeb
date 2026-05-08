@@ -1,4 +1,4 @@
-import { BasicModelDBO, BasicModelDTO } from "./basic.model";
+import { BasicModelDTO } from "./basic.model";
 import { UserShortDTO } from "./user.model";
 
 // Enum for the different types of sports that a team can be associated with

@@ -1,0 +1,184 @@
+###
+# SCENARIO 7
+# 
+# A referee creates a game and sets a field, teams and scheduled date.
+# They cancel the game, then create a new one.
+# They start the game, update the score, then finish the game.
+#
+# REQUIRES the implementation of [POST auth/login]
+# REQUIRES the implementation of [POST games/] and [PUT games/:id]
+# REQUIRES the implementation of [PATCH games/:id/score/:home/:away] and [PATCH games/:id/status/:status]
+# REQUIRES the implementation of [DELETE games/:id]
+# REQUIRES the implementation of [POST teams/]
+# REQUIRES that users.json contain users with the role referee, and trainer.
+# ASSUMES that this referee has the login "ref" and password "ref".
+# ASSUMES that this trainer has the login "trainer" and password "trainer".
+# ASSUMES that the team names "Team XYZ" and "Team ZYX" are available.
+# ASSUMES that there is at least one field in fields.json, and that it is available on 2027-01-02
+#       This can be changed via the variables below if your data is different.
+# 
+# Example: data/users.json
+# [
+#     {
+#         "id": 3,
+#         "first_name": "ref",
+#         "last_name": "ref",
+#         "email": "ref@vinci.be",
+#         "username": "ref",
+#         "password": "$2b$10$MC45ueoSpt/.4CCMBYiPOO5FvQqEDo.oOJzRrYv0BXgnNgW2WVNUK",
+#         "role": "referee",
+#         "status": "active",
+#         "created_at": "2026-03-26T23:06:20.643Z",
+#         "updated_at": "2026-03-26T23:06:20.643Z"
+#     },
+#     {
+#         "id": 4,
+#         "first_name": "trainer",
+#         "last_name": "trainer",
+#         "email": "trainer@vinci.be",
+#         "username": "trainer",
+#         "password": "$2b$10$DXuY8/ihaXXmzse/xMtz9e1ykeG9GH7Pv04DGYYYEWiT9wQkgBdbC",
+#         "role": "trainer",
+#         "status": "active",
+#         "created_at": "2026-03-26T23:06:22.873Z",
+#         "updated_at": "2026-03-26T23:06:22.873Z"
+#     }
+# ]
+#
+# Example: data/fields.json
+# [
+#     {
+#         "id": 1,
+#         "name": "Paul Lambin Stadium",
+#         "location": "Woluwe-Saint-Pierre",
+#         "created_at": "2026-03-26T23:10:05.072Z",
+#         "updated_at": "2026-03-26T23:10:05.072Z"
+#     }
+# ]
+
+# Definition of variables used in the tests
+@server = http://localhost:3000
+@ruser = ref
+@rpassword = ref
+@tuser = trainer
+@tpassword = trainer
+@gameday = 2027-01-02
+@team1 = Team XYZ
+@team2 = Team ZYX
+
+### SETUP -- Teams creation
+### Login as trainer
+# @name trainer_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+    "username": "{{tuser}}",
+    "password": "{{tpassword}}"
+}
+
+### Creates two new teams with the same sport
+# @name newteam1
+POST {{server}}/teams HTTP/1.1
+Content-Type: application/json
+Authorization: {{trainer_login.response.body.token}}
+
+{
+  "name": "{{team1}}",
+  "sportType": "football"
+}
+###
+# @name newteam2
+POST {{server}}/teams HTTP/1.1
+Content-Type: application/json
+Authorization: {{trainer_login.response.body.token}}
+
+{
+  "name": "{{team2}}",
+  "sportType": "football"
+}
+
+### Get a field
+# REQUIRES that at least one field is retrieved for the rest to work
+# @name fields
+GET {{server}}/fields HTTP/1.1
+
+### Login as referee
+# @name ref_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+    "username": "{{ruser}}",
+    "password": "{{rpassword}}"
+}
+
+### Referee creates a game
+# @name newgame
+POST {{server}}/games HTTP/1.1
+Content-Type: application/json
+Authorization: {{ref_login.response.body.token}}
+
+{}
+
+### Referee sets the field and teams and schedule a date.
+# MUST receive a GameDTO with the modified game, with status automatically set to "scheduled"
+PUT {{server}}/games/{{newgame.response.body.id}} HTTP/1.1
+Content-Type: application/json
+Authorization: {{ref_login.response.body.token}}
+
+{
+    "id": {{newgame.response.body.id}},
+    "status": "created",
+    "name": "Clash of the Letters",
+    "homeTeamId": {{newteam1.response.body.id}},
+    "awayTeamId": {{newteam2.response.body.id}},
+    "refereeId": {{newgame.response.body.refereeId}},
+    "fieldId": {{fields.response.body.0.id}},
+    "scheduledDate": "{{gameday}}"
+}
+
+### Referee cancels the game
+# MUST receive a GameDTO with the game with status "cancelled"
+PATCH {{server}}/games/{{newgame.response.body.id}}/status/cancelled HTTP/1.1
+Authorization: {{ref_login.response.body.token}}
+
+### Referee creates a game
+# @name newgame2
+POST {{server}}/games HTTP/1.1
+Content-Type: application/json
+Authorization: {{ref_login.response.body.token}}
+
+{}
+
+### Referee sets the field and teams and schedule a date.
+# MUST receive a GameDTO with the modified game, with status automatically set to "scheduled"
+PUT {{server}}/games/{{newgame2.response.body.id}} HTTP/1.1
+Content-Type: application/json
+Authorization: {{ref_login.response.body.token}}
+
+{
+    "id": {{newgame2.response.body.id}},
+    "status": "created",
+    "name": "Clash of the Letters",
+    "homeTeamId": {{newteam1.response.body.id}},
+    "awayTeamId": {{newteam2.response.body.id}},
+    "refereeId": {{newgame2.response.body.refereeId}},
+    "fieldId": {{fields.response.body.0.id}},
+    "scheduledDate": "{{gameday}}"
+}
+
+### Referee starts the game
+# MUST receive a GameDTO with the modified game, with status "started"
+PATCH {{server}}/games/{{newgame2.response.body.id}}/status/started HTTP/1.1
+Authorization: {{ref_login.response.body.token}}
+
+### Referee updates the score
+# MUST receive a GameDTO with the modified game
+PATCH {{server}}/games/{{newgame2.response.body.id}}/score/2/3 HTTP/1.1
+Authorization: {{ref_login.response.body.token}}
+
+### Referee ends the game
+# MUST receive a GameDTO with the modified game
+PATCH {{server}}/games/{{newgame2.response.body.id}}/status/finished HTTP/1.1
+Authorization: {{ref_login.response.body.token}}

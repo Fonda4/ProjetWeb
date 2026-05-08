@@ -1,0 +1,166 @@
+###
+# SCENARIO 2
+# 
+# A user retrieves the list of users, the information about themselves, 
+# and the information about another user.
+# They modify their own information.
+# An administrator modifies another user's information.
+# An administrator changes the role of another user.
+# An administrator deletes, then reactivates a user.
+# A referee searches for a user by username, then by email.
+#
+# REQUIRES the implementation of [POST users/] and [POST auth/login]
+# REQUIRES the implementation of [GET users/] and [GET users/:id]
+# REQUIRES the implementation of [PUT users/:id]
+# REQUIRES the implementation of [PATCH /users/:id/role/:role]
+# REQUIRES the implementation of [DELETE /users/:id]
+# REQUIRES the implementation of [PATCH /users/:id/reactivate]
+# REQUIRES the implementation of [GET users/username/:username] and 
+#                                [GET users/email/:email]
+#
+# REQUIRES that users.json contain a user with the role admin.
+# ASSUMES that this administrator has the login "admin" and password "admin".
+#       This can be changed via the variables below if your data is different.
+# ASSUMES that no current user has the username newuser or email newuser@vinci.be in users.json
+# 
+# Example: data/users.json
+# [
+#     {
+#         "id": 1,
+#         "first_name": "Admin",
+#         "last_name": "Administrator",
+#         "email": "admin@vinci.be",
+#         "username": "admin",
+#         "password": "$2b$10$/.JGQ0/vX5yiX1dbSSZBRejb1OblqKo4Mx34mkKJb50GQusilXjJm",
+#         "role": "admin",
+#         "status": "active",
+#         "created_at": "2026-03-26T10:06:37.600Z",
+#         "updated_at": "2026-03-26T10:06:37.600Z"
+#     }
+# ]
+
+# Definition of variables used in the tests
+@server = http://localhost:3000
+@user = admin
+@password = admin
+@nuser = newuser
+@npassword = test1234
+
+### Creates a new user for the tests
+# @name newuser
+POST {{server}}/users HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "{{nuser}}@vinci.be",
+  "password": "{{npassword}}",
+  "firstName": "{{nuser}}",
+  "lastName": "{{nuser}}",
+  "username": "{{nuser}}"
+}
+
+### Login as new user
+# @name user_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+    "username": "{{nuser}}",
+    "password": "{{npassword}}"
+}
+
+### User retrieves the list of users
+# MUST receive a list of UserShortDTO
+# @name user_list
+GET {{server}}/users HTTP/1.1
+Authorization: {{user_login.response.body.token}}
+
+### User retrieves the information about themselves
+# MUST receive a UserFullDTO
+GET {{server}}/users/{{newuser.response.body.id}} HTTP/1.1
+Authorization: {{user_login.response.body.token}}
+
+### User retrieves the information about another user
+# MUST receive a UserShortDTO
+GET {{server}}/users/{{user_list.response.body.0.id}} HTTP/1.1
+Authorization: {{user_login.response.body.token}}
+
+### User modifies their own information
+# MUST receive a UserDTO with modified information and updatedAt value
+PUT {{server}}/users/{{newuser.response.body.id}} HTTP/1.1
+Authorization: {{user_login.response.body.token}}
+Content-Type: application/json
+
+{
+  "id": {{newuser.response.body.id}},
+  "email": "{{nuser}}.modified@vinci.be",
+  "firstName": "{{nuser}}",
+  "lastName": "New Name",
+  "username": "{{nuser}}",
+  "role": "player",
+  "status": "active"
+}
+
+### Login as administrator
+# @name admin_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+    "username": "{{user}}",
+    "password": "{{password}}"
+}
+
+### Administrator modifies user's information
+# MUST receive a UserDTO with modified information and updatedAt value
+PUT {{server}}/users/{{newuser.response.body.id}} HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+Content-Type: application/json
+
+{
+  "id": {{newuser.response.body.id}},
+  "email": "{{nuser}}@vinci.be",
+  "firstName": "{{nuser}}",
+  "lastName": "{{nuser}}",
+  "username": "{{nuser}}",
+  "role": "player",
+  "status": "active"
+}
+
+### Administrator changes the role of the user to referee
+# MUST receive a UserDTO with the updated role.
+PATCH {{server}}/users/{{newuser.response.body.id}}/role/referee HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+### Administrator soft-deletes user
+# MUST receive a status 200 response
+DELETE {{server}}/users/{{newuser.response.body.id}} HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+### List users to confirm deletion
+GET {{server}}/users HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+### Administrator reactivates user
+# MUST receive a status 200 response
+PATCH {{server}}/users/{{newuser.response.body.id}}/reactivate HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+### List users to confirm reactivation
+GET {{server}}/users HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+### Administrator checks the user's information
+# MUST receive a UserFullDTO showing the user active and referee
+GET {{server}}/users/{{newuser.response.body.id}} HTTP/1.1
+Authorization: {{admin_login.response.body.token}}
+
+### User (as referee) searches for user by username
+# MUST receive a UserDTO with the information of the admin
+GET {{server}}/users/username/{{user}} HTTP/1.1
+Authorization: {{user_login.response.body.token}}
+
+### User (as referee) searches for user by email
+# MUST receive a UserDTO with their own information
+GET {{server}}/users/email/{{nuser}}@vinci.be HTTP/1.1
+Authorization: {{user_login.response.body.token}}

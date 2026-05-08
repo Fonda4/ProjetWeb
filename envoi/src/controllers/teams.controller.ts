@@ -8,6 +8,9 @@ import { LoggerService } from "../services/logger.service";
 
 export const teamsController = Router();
 
+LoggerService.debug("OK TEAMS CONTROLLER LOADED");
+
+
 /**
  * GET /teams
  * List of all teams (Summary version)
@@ -28,7 +31,6 @@ teamsController.get(
   "/own",
   AuthService.authorize,
   (req: AuthenticatedRequest, res: Response) => {
-    LoggerService.info("[TeamsController] GET /teams/own called");
     // 1. Log the incoming request
     LoggerService.info("[TeamsController] GET /teams/own called");
 

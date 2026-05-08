@@ -3,7 +3,10 @@ import { isUserLoginDTO } from "../utils/guards";
 import { AuthService } from "../services/auth.service";
 import { LoggerService } from "../services/logger.service";
 import { Request, Response } from "express";
+
 export const authController = Router();
+
+LoggerService.debug("OK AUTH CONTROLLER LOADED");
 
 /**
  * POST /auth/login

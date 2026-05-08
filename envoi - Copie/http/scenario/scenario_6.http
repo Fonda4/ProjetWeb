@@ -1,0 +1,105 @@
+###
+# SCENARIO 6
+# 
+# A referee creates, then modifies a game.
+# A visitor view the list of games, and the information of the new game.
+# An administrator deletes the game.
+#
+# REQUIRES the implementation of [POST auth/login]
+# REQUIRES the implementation of [POST games/] and [PUT games/:id] (partial)
+# REQUIRES the implementation of [GET games/] and [GET games/:id]
+# REQUIRES the implementation of [DELETE games/:id]
+# REQUIRES that users.json contain a user with the role referee, and a user with the role admin.
+# ASSUMES that this admin has the login "admin" and password "admin".
+# ASSUMES that this referee has the login "ref" and password "ref".
+#       This can be changed via the variables below if your data is different.
+# 
+# Example: data/users.json
+# [
+#     {
+#         "id": 1,
+#         "first_name": "Admin",
+#         "last_name": "Administrator",
+#         "email": "admin@vinci.be",
+#         "username": "admin",
+#         "password": "$2b$10$/.JGQ0/vX5yiX1dbSSZBRejb1OblqKo4Mx34mkKJb50GQusilXjJm",
+#         "role": "admin",
+#         "status": "active",
+#         "created_at": "2026-03-26T10:06:37.600Z",
+#         "updated_at": "2026-03-26T10:06:37.600Z"
+#     },
+#     {
+#         "id": 3,
+#         "first_name": "ref",
+#         "last_name": "ref",
+#         "email": "ref@vinci.be",
+#         "username": "ref",
+#         "password": "$2b$10$MC45ueoSpt/.4CCMBYiPOO5FvQqEDo.oOJzRrYv0BXgnNgW2WVNUK",
+#         "role": "referee",
+#         "status": "active",
+#         "created_at": "2026-03-26T23:06:20.643Z",
+#         "updated_at": "2026-03-26T23:06:20.643Z"
+#     }
+# ]
+
+# Definition of variables used in the tests
+@server = http://localhost:3000
+@auser = admin
+@apassword = admin
+@ruser = ref
+@rpassword = ref
+
+### Login as referee
+# @name ref_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+    "username": "{{ruser}}",
+    "password": "{{rpassword}}"
+}
+
+### Referee creates a new game
+# MUST receive a GameDTO with the created game, and the referee set to the ref user
+# @name newgame
+POST {{server}}/games HTTP/1.1
+Content-Type: application/json
+Authorization: {{ref_login.response.body.token}}
+
+{}
+
+### Referee modifies the game
+# MUST receive a GameDTO with the modifed game.
+PUT {{server}}/games/{{newgame.response.body.id}} HTTP/1.1
+Content-Type: application/json
+Authorization: {{ref_login.response.body.token}}
+
+{
+    "id": {{newgame.response.body.id}},
+    "status": "created",
+    "name": "Clash of the Letters",
+    "refereeId": {{newgame.response.body.refereeId}}
+}
+
+### Visitor views the list of games
+# MUST receive a list of GameShortDTO
+GET {{server}}/games HTTP/1.1
+
+### Visitor checks the information of the new game
+# MUST receive a single GameShortDTO
+GET {{server}}/games/{{newgame.response.body.id}} HTTP/1.1
+
+### Login as admin
+# @name admin_login
+POST {{server}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+    "username": "{{auser}}",
+    "password": "{{apassword}}"
+}
+
+### Administrator deletes the game
+# MUST receive a status 200
+DELETE {{server}}/games/{{newgame.response.body.id}} HTTP/1.1
+Authorization: {{admin_login.response.body.token}}

@@ -8,6 +8,9 @@ import { AuthenticatedRequest } from "../models/auth.model";
 
 export const fieldsController = Router();
 
+LoggerService.debug("OK FIELDS CONTROLLER LOADED");
+
+
 /**
  * GET /fields
  * Retrieves the list of all fields

@@ -1,1 +1,53 @@
-[]
+[
+  {
+    "id": 1,
+    "name": "Football Club Bruxelles",
+    "description": "A competitive football team",
+    "sport_type": "football",
+    "players": [
+      2,
+      3
+    ],
+    "trainer_id": 4,
+    "created_at": "2026-05-08T11:55:14.259Z",
+    "updated_at": "2026-05-08T11:55:14.259Z"
+  },
+  {
+    "id": 2,
+    "name": "Basket Club Bruxelles",
+    "description": "A rising basketball team",
+    "sport_type": "basketball",
+    "players": [
+      4
+    ],
+    "trainer_id": 5,
+    "created_at": "2026-05-08T11:55:14.259Z",
+    "updated_at": "2026-05-08T11:55:14.259Z"
+  },
+  {
+    "id": 3,
+    "name": "Football Club Mons",
+    "description": "A not so competitive football team",
+    "sport_type": "football",
+    "players": [
+      2,
+      3
+    ],
+    "trainer_id": 4,
+    "created_at": "2026-05-08T11:55:14.259Z",
+    "updated_at": "2026-05-08T11:55:14.259Z"
+  },
+  {
+    "id": 4,
+    "name": "Basket Club Mons",
+    "description": "A rising basketball team",
+    "sport_type": "basketball",
+    "players": [
+      2,
+      3
+    ],
+    "trainer_id": 4,
+    "created_at": "2026-05-08T11:55:14.259Z",
+    "updated_at": "2026-05-08T11:55:14.259Z"
+  }
+]

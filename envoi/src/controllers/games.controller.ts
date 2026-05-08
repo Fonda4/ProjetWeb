@@ -9,6 +9,9 @@ import { LoggerService } from "../services/logger.service";
 
 export const gamesController = Router();
 
+LoggerService.debug("OK GAMES CONTROLLER LOADED");
+
+
 /**
  * GET /games
  * Retrieves the list of all upcoming and ongoing games

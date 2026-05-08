@@ -1,4 +1,4 @@
-import e, { Request, Response, Router } from "express";
+import { Request, Response, Router } from "express";
 import { UsersService } from "../services/users.service";
 import { isNewUserDTO, isNumber, isString } from "../utils/guards";
 import { LoggerService } from "../services/logger.service";
@@ -9,6 +9,8 @@ import { AuthenticatedRequest } from "../models/auth.model";
 import { UsersMapper } from "../mappers/users.mapper";
 
 export const usersController = Router();
+
+LoggerService.debug("OK USERS CONTROLLER LOADED");
 
 /**
  * GET /users
