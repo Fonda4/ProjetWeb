@@ -35,5 +35,5 @@ app.use('/games', gamesController);
 
 // Test route to check if the server is running
 app.get('/', (req, res) => {
-  res.send('Bienvenue sur l\'API Games Manager !');
+  res.send('Welcome to the Games Manager API!');
 });
