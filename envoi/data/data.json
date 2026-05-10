@@ -1,0 +1,21 @@
+[      {
+          "id": 1,
+          "name": "Paul Lambin Stadium",
+          "location": "Woluwe-Saint-Pierre",
+          "created_at": "2026-03-26T23:10:05.072Z",
+          "updated_at": "2026-03-26T23:10:05.072Z"
+      }
+  ,  
+      {
+          "id": 1,
+          "name": "Keyboard Warriors",
+          "description": "The Vinci informatics handball team",
+          "sport_type": "handball",
+          "players": [
+              2, 10, 24
+          ],
+          "trainer_id": 3,
+          "created_at": "2026-03-26T23:10:17.230Z",
+          "updated_at": "2026-03-26T23:12:44.064Z"
+      }
+    ]
